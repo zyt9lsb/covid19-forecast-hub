@@ -79,7 +79,7 @@ please use the following format
 
     LICENSE-team.txt
 
-
+Confused about which license to add? Check out which one fits your needs at https://choosealicense.com/.
 
 
 ### Forecasts
