@@ -11,7 +11,7 @@ library("MMWRweek")
 
 options(DT.options = list(pageLength = 25))
 
-source("../code/processing-fxns/get_next_saturday.R")
+source("../processing-fxns/get_next_saturday.R")
 source("read_processed_data.R")
 
 fourweek_date <- get_next_saturday(Sys.Date() + 3*7)
@@ -26,34 +26,34 @@ truth_cols = readr::cols_only(
 )
 
 # JHU
-inc_jhu = readr::read_csv("../data-truth/truth-Incident Deaths.csv",   
+inc_jhu = readr::read_csv("../../data-truth/truth-Incident Deaths.csv",   
                       col_types = truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "JHU-CSSE") %>%
   na.omit()
 
-cum_jhu = readr::read_csv("../data-truth/truth-Cumulative Deaths.csv", 
+cum_jhu = readr::read_csv("../../data-truth/truth-Cumulative Deaths.csv", 
                       col_types = truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "JHU-CSSE")
 
 
 # USAFacts
-inc_usa = readr::read_csv("../data-truth/usafacts/truth_usafacts-Incident Deaths.csv",
+inc_usa = readr::read_csv("../../data-truth/usafacts/truth_usafacts-Incident Deaths.csv",
                           col_types = truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "USAFacts") %>%
   na.omit()
 
-cum_usa = readr::read_csv("../data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv", 
+cum_usa = readr::read_csv("../../data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv", 
                           col_types = truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "USAFacts")
 
 
 # NYTimes 
-inc_nyt = readr::read_csv("../data-truth/nytimes/truth_nytimes-Incident Deaths.csv",
+inc_nyt = readr::read_csv("../../data-truth/nytimes/truth_nytimes-Incident Deaths.csv",
                           col_types = truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "NYTimes") %>%
   na.omit()
 
-cum_nyt = readr::read_csv("../data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv", 
+cum_nyt = readr::read_csv("../../data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv", 
                           col_types = truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "NYTimes")
 

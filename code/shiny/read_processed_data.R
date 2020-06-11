@@ -5,6 +5,8 @@ library("tidyr")
 library("readr")
 
 read_my_csv = function(f, into) {
+  filename = f
+  f = paste(c("../../data-processed/",f), collapse="")
   tryCatch(
     readr::read_csv(f,
                     col_types = readr::cols_only(
@@ -33,15 +35,16 @@ read_my_csv = function(f, into) {
       )
     }
   ) %>%
-    dplyr::mutate(file = f) %>%
+    dplyr::mutate(file = filename)%>%
     tidyr::separate(file, into, sep="-|/") 
+
 }
 
 read_my_dir = function(path, pattern, into, exclude = NULL) {
   files = list.files(path       = path,
                      pattern    = pattern,
                      recursive  = TRUE,
-                     full.names = TRUE) %>%
+                     full.names = FALSE) %>%
     setdiff(exclude)
   plyr::ldply(files, read_my_csv, into = into)
 }
@@ -49,7 +52,7 @@ read_my_dir = function(path, pattern, into, exclude = NULL) {
 # above from https://gist.github.com/jarad/8f3b79b33489828ab8244e82a4a0c5b3
 #############################################################################
 
-locations <- readr::read_csv("../data-locations/locations.csv",
+locations <- readr::read_csv("../../data-locations/locations.csv",
                              col_types = readr::cols(
                                abbreviation  = readr::col_character(),
                                location      = readr::col_character(),
@@ -57,9 +60,7 @@ locations <- readr::read_csv("../data-locations/locations.csv",
                              )) 
 
 
-all_data = read_my_dir(".", "*.csv",
-                into = c("period","team","model",
-                         "year","month","day","team2","model_etc")) %>%
+all_data = read_my_dir("../../data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")) %>%
   
   dplyr::select(team, model, forecast_date, type, location, target, quantile, 
                 value, target_end_date) %>%
