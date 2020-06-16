@@ -18,43 +18,43 @@ fourweek_date <- get_next_saturday(Sys.Date() + 3*7)
 
 ###############################################################################
 # Get truth 
-truth_cols = readr::cols_only(
-  date          = readr::col_date(format = ""),
-  location      = readr::col_character(),
+truth_cols = c(
+  "date"          = "Date",
+  "location"      = "character",
   # location_name = readr::col_character(),
-  value         = readr::col_double()
+  "value"         = "double"
 )
 
 # JHU
-inc_jhu = readr::read_csv("../../data-truth/truth-Incident Deaths.csv",   
-                      col_types = truth_cols) %>%
+inc_jhu = data.table::fread("../../data-truth/truth-Incident Deaths.csv",   
+                      colClasses  = truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "JHU-CSSE") %>%
   na.omit()
 
-cum_jhu = readr::read_csv("../../data-truth/truth-Cumulative Deaths.csv", 
-                      col_types = truth_cols) %>%
+cum_jhu = data.table::fread("../../data-truth/truth-Cumulative Deaths.csv", 
+                      colClasses = truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "JHU-CSSE")
 
 
 # USAFacts
-inc_usa = readr::read_csv("../../data-truth/usafacts/truth_usafacts-Incident Deaths.csv",
-                          col_types = truth_cols) %>%
+inc_usa = data.table::fread("../../data-truth/usafacts/truth_usafacts-Incident Deaths.csv",
+                          colClasses=truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "USAFacts") %>%
   na.omit()
 
-cum_usa = readr::read_csv("../../data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv", 
-                          col_types = truth_cols) %>%
+cum_usa = data.table::fread("../../data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv", 
+                          colClasses=truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "USAFacts")
 
 
 # NYTimes 
-inc_nyt = readr::read_csv("../../data-truth/nytimes/truth_nytimes-Incident Deaths.csv",
-                          col_types = truth_cols) %>%
+inc_nyt = data.table::fread("../../data-truth/nytimes/truth_nytimes-Incident Deaths.csv",
+                          colClasses =truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "NYTimes") %>%
   na.omit()
 
-cum_nyt = readr::read_csv("../../data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv", 
-                          col_types = truth_cols) %>%
+cum_nyt = data.table::fread("../../data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv", 
+                          colClasses = truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "NYTimes")
 
 
@@ -127,7 +127,7 @@ quantiles = list(
 
 latest_quantiles <- latest %>%
   dplyr::filter(type == "quantile") %>%
-  dplyr::mutate(quantile = sprintf("%.3f", quantile)) %>%
+  dplyr::mutate(quantile = sprintf("%.3f", as.double(quantile))) %>%
   dplyr::group_by(team, model, forecast_date, target) %>%
   dplyr::summarize(
     full = all(quantiles$full %in% quantile),
