@@ -2,35 +2,37 @@
 
 library("dplyr")
 library("tidyr")
-library("readr")
+#library("readr")
+library("data.table")
+#library("drake")
 
 read_my_csv = function(f, into) {
   filename = f
   f = paste(c("../../data-processed/",f), collapse="")
   tryCatch(
-    readr::read_csv(f,
-                    col_types = readr::cols_only(
-                      forecast_date   = readr::col_date(format = ""),
-                      target          = readr::col_character(),
-                      target_end_date = readr::col_date(format = ""),
-                      location        = readr::col_character(),
-                      type            = readr::col_character(),
-                      quantile        = readr::col_double(),
-                      value           = readr::col_double()
+    data.table::fread(f,
+                    colClasses =c(
+                      "forecast_date"   = "Date",
+                      "target"          = "character",
+                      "target_end_date" = "Date",
+                      "location"        = "character",
+                      "type"            = "character",
+                      "quantile"        = "double",
+                      "value"           = "double"
                     )),
     warning = function(w) {
       w$message <- paste0(f,": ", gsub("simpleWarning: ","",w))
       warning(w)
       suppressWarnings(
-        readr::read_csv(f,
-                        col_types = readr::cols_only(
-                          forecast_date   = readr::col_date(format = ""),
-                          target          = readr::col_character(),
-                          target_end_date = readr::col_date(format = ""),
-                          location        = readr::col_character(),
-                          type            = readr::col_character(),
-                          quantile        = readr::col_double(),
-                          value           = readr::col_double()
+        data.table::fread(f,
+                          colClasses =c(
+                            "forecast_date"   = "Date",
+                            "target"          = "character",
+                            "target_end_date" = "Date",
+                            "location"        = "character",
+                            "type"            = "character",
+                            "quantile"        = "double",
+                            "value"           = "double"
                         ))
       )
     }
@@ -52,11 +54,11 @@ read_my_dir = function(path, pattern, into, exclude = NULL) {
 # above from https://gist.github.com/jarad/8f3b79b33489828ab8244e82a4a0c5b3
 #############################################################################
 
-locations <- readr::read_csv("../../data-locations/locations.csv",
-                             col_types = readr::cols(
-                               abbreviation  = readr::col_character(),
-                               location      = readr::col_character(),
-                               location_name = readr::col_character()
+locations <-  data.table::fread("../../data-locations/locations.csv",
+                             colClasses=c(
+                               "abbreviation"  = "character",
+                               "location"      = "character",
+                               "location_name" = "character"
                              )) 
 
 
