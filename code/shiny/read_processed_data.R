@@ -4,7 +4,7 @@ library("dplyr")
 library("tidyr")
 #library("readr")
 library("data.table")
-#library("drake")
+library("drake")
 
 read_my_csv = function(f, into) {
   filename = f
@@ -62,9 +62,9 @@ locations <-  data.table::fread("../../data-locations/locations.csv",
                              )) 
 
 
-all_data = read_my_dir("../../data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")) %>%
+#all_data = read_my_dir("../../data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")) %>%
   
-  dplyr::select(team, model, forecast_date, type, location, target, quantile, 
-                value, target_end_date) %>%
+#  dplyr::select(team, model, forecast_date, type, location, target, quantile, 
+#                value, target_end_date) %>%
     
-  dplyr::left_join(locations, by=c("location")) 
+#  dplyr::left_join(locations, by=c("location")) 
