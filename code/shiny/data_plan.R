@@ -1,7 +1,11 @@
 library("drake")
 library("dplyr")
+library("purrr")
+library("tidyverse")
 source("read_processed_data.R")
 source("../processing-fxns/get_next_saturday.R")
+
+cache <- storr::storr_environment()
 
 data_plan <- drake::drake_plan(
   raw_data = read_my_dir("../../data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")),
@@ -73,10 +77,9 @@ data_plan <- drake::drake_plan(
     dplyr::mutate(death_cases = "death",
                   simple_target = paste(unit, "ahead", inc_cum, death_cases)),
   
+  
   truth_sources = unique(truth$source),
-  
-  ###############################################################################
-  
+
   
   # Further process the processed data for ease of exploration
   latest = all_data %>% 
@@ -173,10 +176,7 @@ data_plan <- drake::drake_plan(
     theme(legend.position = "none",
           axis.text.x = element_text(angle = 90, hjust = 1)),
   
-  
-  
-  ###############################################################################
-  # Create shiny latest plot
+
   latest_plot_data = latest %>%
     filter(quantile %in% c(.025,.25,.5,.75,.975) | type == "point") %>%
     
@@ -187,19 +187,41 @@ data_plan <- drake::drake_plan(
       names_from = quantile,
       values_from = value
     ),
-  deployment = runApp(file_in("app.R"))
+  #outputs = c(all_data,fourweek_date,truth,truth_sources,latest,latest_locations,latest_targets,quantiles,latest_quantiles,latest_quantiles_summary,ensemble,g_ensemble_quantiles,latest_plot_data),
+  all_data_out = saveRDS(all_data, file = file_out("drake_files/all_data.RDS")),
+  fourweek_date_out = saveRDS(fourweek_date, file = file_out("drake_files/fourweek_date.RDS")),
+  truth_out = saveRDS(truth, file = file_out("drake_files/truth.RDS")),
+  truth_sources_out = saveRDS(truth_sources, file = file_out("drake_files/truth_sources.RDS")),
+  latest_out =saveRDS(latest, file = file_out("drake_files/latest.RDS")),
+  latest_locations_out =saveRDS(latest_locations, file = file_out("drake_files/latest_locations.RDS")),
+  latest_targets_out =saveRDS(latest_targets, file = file_out("drake_files/latest_targets.RDS")),
+  quantiles_out =saveRDS(quantiles, file = file_out("drake_files/quantiles.RDS")),
+  latest_quantiles_out =saveRDS(latest_quantiles, file = file_out("drake_files/latest_quantiles.RDS")),
+  latest_quantiles_summary_out =saveRDS(latest_quantiles_summary, file = file_out("drake_files/latest_quantiles_summary.RDS")),
+  ensemble_out =saveRDS(ensemble, file = file_out("drake_files/ensemble.RDS")),
+  g_ensemble_quantiles_out=saveRDS(g_ensemble_quantiles, file = file_out("drake_files/g_ensemble_quantiles.RDS")),
+  latest_plot_data_out =saveRDS(latest_plot_data, file = file_out("drake_files/latest_plot_data.RDS"))
+  
+  #all_files = get_all_files(outputs),
+  #out = mapply(saveRDS, object = outputs, file =all_files)
+  #deployment = custom_deployment_function(file_in("app.R"))
   #all_data,fourweek_date,truth,truth_sources,latest,latest_locations,latest_targets,quantiles,latest_quantiles,latest_quantiles_summary,
   #offset,ensemble_data,ensemble,ensemble_quantiles,g_ensemble_quantiles,latest_plot_data))
 )
 
-#custom_deployment_function <- function(file) {
-#  rsconnect::deployApp(
-#    appFiles = file,
-#    forceUpdate = TRUE
-#  )
-#}
+get_file_path <- function(filename){
+  filename = deparse(substitute(filename))
+  filepath = paste0("drake_files/",filename)
+  filepath = noquote(paste0(filepath,".RDS"))
+  return (filepath)
+}
 
-drake::make(data_plan)
+get_all_files<-function(lists){
+  all_file_paths = purrr::map(lists,get_file_path)
+  return(purrr::map(drake::file_out,all_file_paths))
+}
+
+drake::make(data_plan,cache = cache)
 drake::vis_drake_graph(data_plan)
 
 #all_data_test <- drake::readd(data)

@@ -1,3 +1,16 @@
+all_data = readRDS("drake_files/all_data.RDS")
+fourweek_date = readRDS("drake_files/fourweek_date.RDS")
+truth = readRDS("drake_files/truth.RDS")
+truth_sources = readRDS("drake_files/truth_sources.RDS")
+latest =readRDS("drake_files/latest.RDS")
+latest_locations=readRDS("drake_files/latest_locations.RDS")
+latest_targets=readRDS("drake_files/latest_targets.RDS")
+quantiles=readRDS("drake_files/quantiles.RDS")
+latest_quantiles=readRDS("drake_files/latest_quantiles.RDS")
+latest_quantiles_summary=readRDS("drake_files/latest_quantiles_summary.RDS")
+ensemble=readRDS("drake_files/ensemble.RDS")
+g_ensemble_quantiles=readRDS("drake_files/g_ensemble_quantiles.RDS")
+latest_plot_data=readRDS("drake_files/latest_plot_data.RDS")
 
 ui <- navbarPage(
   "Explore:",
@@ -157,3 +170,5 @@ server <- function(input, output, session) {
   
   output$all_data         <- DT::renderDT(all_data,         filter = "top")
 }
+
+shinyApp(ui = ui, server = server)
