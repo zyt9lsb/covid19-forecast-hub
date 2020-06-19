@@ -7,6 +7,11 @@ source("code/processing-fxns/get_next_saturday.R")
 
 cache <- storr::storr_environment()
 
+forecast_files <- list.files(path = "data-processed",
+                             pattern = "*.csv",
+                             full.names = TRUE,
+                             recursive = TRUE)
+
 data_plan <- drake::drake_plan(
   raw_data = read_my_dir("data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")),
   all_data = raw_data %>%dplyr::select(team, model, forecast_date, type, location, target, quantile, 
