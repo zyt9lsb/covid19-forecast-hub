@@ -8,7 +8,7 @@ library("drake")
 
 read_my_csv = function(f, into) {
   filename = f
-  f = paste(c("../../data-processed/",f), collapse="")
+  f = paste(c("data-processed/",f), collapse="")
   tryCatch(
     data.table::fread(f,
                     colClasses =c(
@@ -54,7 +54,7 @@ read_my_dir = function(path, pattern, into, exclude = NULL) {
 # above from https://gist.github.com/jarad/8f3b79b33489828ab8244e82a4a0c5b3
 #############################################################################
 
-locations <-  data.table::fread("../../data-locations/locations.csv",
+locations <-  data.table::fread("data-locations/locations.csv",
                              colClasses=c(
                                "abbreviation"  = "character",
                                "location"      = "character",
@@ -62,9 +62,9 @@ locations <-  data.table::fread("../../data-locations/locations.csv",
                              )) 
 
 
-#all_data = read_my_dir("../../data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")) %>%
+all_data = read_my_dir("data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")) %>%
   
-#  dplyr::select(team, model, forecast_date, type, location, target, quantile, 
-#                value, target_end_date) %>%
+  dplyr::select(team, model, forecast_date, type, location, target, quantile, 
+                value, target_end_date) %>%
     
-#  dplyr::left_join(locations, by=c("location")) 
+  dplyr::left_join(locations, by=c("location")) 

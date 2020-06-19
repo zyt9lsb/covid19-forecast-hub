@@ -1,16 +1,16 @@
-all_data = readRDS("drake_files/all_data.RDS")
-fourweek_date = readRDS("drake_files/fourweek_date.RDS")
-truth = readRDS("drake_files/truth.RDS")
-truth_sources = readRDS("drake_files/truth_sources.RDS")
-latest =readRDS("drake_files/latest.RDS")
-latest_locations=readRDS("drake_files/latest_locations.RDS")
-latest_targets=readRDS("drake_files/latest_targets.RDS")
-quantiles=readRDS("drake_files/quantiles.RDS")
-latest_quantiles=readRDS("drake_files/latest_quantiles.RDS")
-latest_quantiles_summary=readRDS("drake_files/latest_quantiles_summary.RDS")
-ensemble=readRDS("drake_files/ensemble.RDS")
-g_ensemble_quantiles=readRDS("drake_files/g_ensemble_quantiles.RDS")
-latest_plot_data=readRDS("drake_files/latest_plot_data.RDS")
+all_data = readRDS("code/shiny/drake_files/all_data.RDS")
+fourweek_date = readRDS("code/shiny/drake_files/fourweek_date.RDS")
+truth = readRDS("code/shiny/drake_files/truth.RDS")
+truth_sources = readRDS("code/shiny/drake_files/truth_sources.RDS")
+latest =readRDS("code/shiny/drake_files/latest.RDS")
+latest_locations=readRDS("code/shiny/drake_files/latest_locations.RDS")
+latest_targets=readRDS("code/shiny/drake_files/latest_targets.RDS")
+quantiles=readRDS("code/shiny/drake_files/quantiles.RDS")
+latest_quantiles=readRDS("code/shiny/drake_files/latest_quantiles.RDS")
+latest_quantiles_summary=readRDS("code/shiny/drake_files/latest_quantiles_summary.RDS")
+ensemble=readRDS("code/shiny/drake_files/ensemble.RDS")
+g_ensemble_quantiles=readRDS("code/shiny/drake_files/g_ensemble_quantiles.RDS")
+latest_plot_data=readRDS("code/shiny/drake_files/latest_plot_data.RDS")
 
 ui <- navbarPage(
   "Explore:",
@@ -49,7 +49,7 @@ ui <- navbarPage(
                selectInput("abbreviation", "Location", sort(unique(latest_plot_data$abbreviation   ))),
                selectInput("sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
                dateRangeInput("dates", "Date range", start = "2020-03-01", end = fourweek_date)
-             ), 
+               ), 
              mainPanel(
                plotOutput("latest_plot")
              )
@@ -73,6 +73,9 @@ ui <- navbarPage(
   selected = "Latest Viz"
 )
 
+filter_names <- c("input$team", "input$model","input$target", "input$abbreviation")
+filters <- c("team %in% input$team","model %in% input$model","target %in% input$target", "abbreviation %in% input$abbreviation")
+checknull <- NULL
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
@@ -117,7 +120,7 @@ server <- function(input, output, session) {
   latest_tm   <- reactive({ latest_t()       %>% filter(model         == input$model) })
   latest_tmt  <- reactive({ latest_tm()      %>% filter(simple_target == input$target) })
   latest_tmtl <- reactive({ latest_tmt()     %>% filter(abbreviation    == input$abbreviation) })
-  
+
   truth_plot_data <- reactive({ 
     input_simple_target <- unique(paste(
       latest_tmtl()$unit, "ahead", latest_tmtl()$inc_cum, latest_tmtl()$death_cases))
