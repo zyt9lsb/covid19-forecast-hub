@@ -2,13 +2,13 @@ library("drake")
 library("dplyr")
 library("purrr")
 library("tidyverse")
-source("read_processed_data.R")
-source("../processing-fxns/get_next_saturday.R")
+source("code/shiny/read_processed_data.R")
+source("code/processing-fxns/get_next_saturday.R")
 
 cache <- storr::storr_environment()
 
 data_plan <- drake::drake_plan(
-  raw_data = read_my_dir("../../data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")),
+  raw_data = read_my_dir("data-processed/", "*.csv",into = c("team","model","year","month","day","team2","model_etc")),
   all_data = raw_data %>%dplyr::select(team, model, forecast_date, type, location, target, quantile, 
                                    value, target_end_date) %>%
     dplyr::left_join(locations, by=c("location")), 
@@ -21,34 +21,34 @@ data_plan <- drake::drake_plan(
   ),
   
   # JHU
-  inc_jhu = data.table::fread("../../data-truth/truth-Incident Deaths.csv",   
+  inc_jhu = data.table::fread("data-truth/truth-Incident Deaths.csv",   
                               colClasses  = truth_cols) %>%
     dplyr::mutate(inc_cum = "inc", source = "JHU-CSSE") %>%
     na.omit(),
   
-  cum_jhu = data.table::fread("../../data-truth/truth-Cumulative Deaths.csv", 
+  cum_jhu = data.table::fread("data-truth/truth-Cumulative Deaths.csv", 
                               colClasses = truth_cols) %>%
     dplyr::mutate(inc_cum = "cum", source = "JHU-CSSE"),
   
   
   # USAFacts
-  inc_usa = data.table::fread("../../data-truth/usafacts/truth_usafacts-Incident Deaths.csv",
+  inc_usa = data.table::fread("data-truth/usafacts/truth_usafacts-Incident Deaths.csv",
                               colClasses=truth_cols) %>%
     dplyr::mutate(inc_cum = "inc", source = "USAFacts") %>%
     na.omit(),
   
-  cum_usa = data.table::fread("../../data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv", 
+  cum_usa = data.table::fread("data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv", 
                               colClasses=truth_cols) %>%
     dplyr::mutate(inc_cum = "cum", source = "USAFacts"),
   
   
   # NYTimes 
-  inc_nyt = data.table::fread("../../data-truth/nytimes/truth_nytimes-Incident Deaths.csv",
+  inc_nyt = data.table::fread("data-truth/nytimes/truth_nytimes-Incident Deaths.csv",
                               colClasses =truth_cols) %>%
     dplyr::mutate(inc_cum = "inc", source = "NYTimes") %>%
     na.omit(),
   
-  cum_nyt = data.table::fread("../../data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv", 
+  cum_nyt = data.table::fread("data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv", 
                               colClasses = truth_cols) %>%
     dplyr::mutate(inc_cum = "cum", source = "NYTimes"),
   
@@ -188,40 +188,23 @@ data_plan <- drake::drake_plan(
       values_from = value
     ),
   #outputs = c(all_data,fourweek_date,truth,truth_sources,latest,latest_locations,latest_targets,quantiles,latest_quantiles,latest_quantiles_summary,ensemble,g_ensemble_quantiles,latest_plot_data),
-  all_data_out = saveRDS(all_data, file = file_out("drake_files/all_data.RDS")),
-  fourweek_date_out = saveRDS(fourweek_date, file = file_out("drake_files/fourweek_date.RDS")),
-  truth_out = saveRDS(truth, file = file_out("drake_files/truth.RDS")),
-  truth_sources_out = saveRDS(truth_sources, file = file_out("drake_files/truth_sources.RDS")),
-  latest_out =saveRDS(latest, file = file_out("drake_files/latest.RDS")),
-  latest_locations_out =saveRDS(latest_locations, file = file_out("drake_files/latest_locations.RDS")),
-  latest_targets_out =saveRDS(latest_targets, file = file_out("drake_files/latest_targets.RDS")),
-  quantiles_out =saveRDS(quantiles, file = file_out("drake_files/quantiles.RDS")),
-  latest_quantiles_out =saveRDS(latest_quantiles, file = file_out("drake_files/latest_quantiles.RDS")),
-  latest_quantiles_summary_out =saveRDS(latest_quantiles_summary, file = file_out("drake_files/latest_quantiles_summary.RDS")),
-  ensemble_out =saveRDS(ensemble, file = file_out("drake_files/ensemble.RDS")),
-  g_ensemble_quantiles_out=saveRDS(g_ensemble_quantiles, file = file_out("drake_files/g_ensemble_quantiles.RDS")),
-  latest_plot_data_out =saveRDS(latest_plot_data, file = file_out("drake_files/latest_plot_data.RDS"))
-  
-  #all_files = get_all_files(outputs),
-  #out = mapply(saveRDS, object = outputs, file =all_files)
-  #deployment = custom_deployment_function(file_in("app.R"))
-  #all_data,fourweek_date,truth,truth_sources,latest,latest_locations,latest_targets,quantiles,latest_quantiles,latest_quantiles_summary,
-  #offset,ensemble_data,ensemble,ensemble_quantiles,g_ensemble_quantiles,latest_plot_data))
+  all_data_out = saveRDS(all_data, file = file_out("code/shiny/drake_files/all_data.RDS")),
+  fourweek_date_out = saveRDS(fourweek_date, file = file_out("code/shiny/drake_files/fourweek_date.RDS")),
+  truth_out = saveRDS(truth, file = file_out("code/shiny/drake_files/truth.RDS")),
+  truth_sources_out = saveRDS(truth_sources, file = file_out("code/shiny/drake_files/truth_sources.RDS")),
+  latest_out =saveRDS(latest, file = file_out("code/shiny/drake_files/latest.RDS")),
+  latest_locations_out =saveRDS(latest_locations, file = file_out("code/shiny/drake_files/latest_locations.RDS")),
+  latest_targets_out =saveRDS(latest_targets, file = file_out("code/shiny/drake_files/latest_targets.RDS")),
+  quantiles_out =saveRDS(quantiles, file = file_out("code/shiny/drake_files/quantiles.RDS")),
+  latest_quantiles_out =saveRDS(latest_quantiles, file = file_out("code/shiny/drake_files/latest_quantiles.RDS")),
+  latest_quantiles_summary_out =saveRDS(latest_quantiles_summary, file = file_out("code/shiny/drake_files/latest_quantiles_summary.RDS")),
+  ensemble_out =saveRDS(ensemble, file = file_out("code/shiny/drake_files/ensemble.RDS")),
+  g_ensemble_quantiles_out=saveRDS(g_ensemble_quantiles, file = file_out("code/shiny/drake_files/g_ensemble_quantiles.RDS")),
+  latest_plot_data_out =saveRDS(latest_plot_data, file = file_out("code/shiny/drake_files/latest_plot_data.RDS"))
 )
 
-get_file_path <- function(filename){
-  filename = deparse(substitute(filename))
-  filepath = paste0("drake_files/",filename)
-  filepath = noquote(paste0(filepath,".RDS"))
-  return (filepath)
-}
-
-get_all_files<-function(lists){
-  all_file_paths = purrr::map(lists,get_file_path)
-  return(purrr::map(drake::file_out,all_file_paths))
-}
 
 drake::make(data_plan,cache = cache)
-drake::vis_drake_graph(data_plan)
+#drake::vis_drake_graph(data_plan)
 
-#all_data_test <- drake::readd(data)
+

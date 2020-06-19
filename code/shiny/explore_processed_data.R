@@ -11,8 +11,8 @@ library("MMWRweek")
 
 options(DT.options = list(pageLength = 25))
 
-source("../processing-fxns/get_next_saturday.R")
-source("read_processed_data.R")
+source("code/processing-fxns/get_next_saturday.R")
+source("code/shiny/read_processed_data.R")
 
 fourweek_date <- get_next_saturday(Sys.Date() + 3*7)
 
@@ -26,34 +26,34 @@ truth_cols = c(
 )
 
 # JHU
-inc_jhu = data.table::fread("../../data-truth/truth-Incident Deaths.csv",   
+inc_jhu = data.table::fread("data-truth/truth-Incident Deaths.csv",   
                       colClasses  = truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "JHU-CSSE") %>%
   na.omit()
 
-cum_jhu = data.table::fread("../../data-truth/truth-Cumulative Deaths.csv", 
+cum_jhu = data.table::fread("data-truth/truth-Cumulative Deaths.csv", 
                       colClasses = truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "JHU-CSSE")
 
 
 # USAFacts
-inc_usa = data.table::fread("../../data-truth/usafacts/truth_usafacts-Incident Deaths.csv",
+inc_usa = data.table::fread("data-truth/usafacts/truth_usafacts-Incident Deaths.csv",
                           colClasses=truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "USAFacts") %>%
   na.omit()
 
-cum_usa = data.table::fread("../../data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv", 
+cum_usa = data.table::fread("data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv", 
                           colClasses=truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "USAFacts")
 
 
 # NYTimes 
-inc_nyt = data.table::fread("../../data-truth/nytimes/truth_nytimes-Incident Deaths.csv",
+inc_nyt = data.table::fread("data-truth/nytimes/truth_nytimes-Incident Deaths.csv",
                           colClasses =truth_cols) %>%
   dplyr::mutate(inc_cum = "inc", source = "NYTimes") %>%
   na.omit()
 
-cum_nyt = data.table::fread("../../data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv", 
+cum_nyt = data.table::fread("data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv", 
                           colClasses = truth_cols) %>%
   dplyr::mutate(inc_cum = "cum", source = "NYTimes")
 
