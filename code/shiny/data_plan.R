@@ -5,6 +5,11 @@ library("tidyverse")
 source("code/shiny/read_processed_data.R")
 source("code/processing-fxns/get_next_saturday.R")
 
+#load functions 
+source("code/shiny/R/get_latest.R")
+source("code/shiny/R/get_latest_locations.R")
+source("code/shiny/R/get_latest_targets.R")
+
 cache <- storr::storr_environment()
 
 forecast_files <- list.files(path = "data-processed",
@@ -87,37 +92,49 @@ data_plan <- drake::drake_plan(
 
   
   # Further process the processed data for ease of exploration
-  latest = all_data %>% 
-    filter(!is.na(forecast_date)) %>%
-    group_by(team, model) %>%
-    dplyr::filter(forecast_date == max(forecast_date)) %>%
-    ungroup() %>%
-    tidyr::separate(target, into=c("n_unit","unit","ahead","inc_cum","death_cases"),
-                    remove = FALSE),
   
-  latest_locations = latest %>%
-    dplyr::group_by(team, model, forecast_date) %>%
-    dplyr::summarize(US = ifelse(any(abbreviation == "US"), "Yes", "-"),
-                     n_states = sum(state.abb %in% abbreviation),
-                     other = paste(unique(setdiff(abbreviation, c(state.abb,"US"))),
-                                   collapse = " "),
-                     missing_states = paste(unique(setdiff(state.abb, abbreviation)),
-                                            collapse = " "),
-                     missing_states = ifelse(missing_states == paste(state.abb, collapse = " "), 
-                                             "all", missing_states),
-                     missing_states = ifelse(nchar(missing_states) > 7, 
-                                             "...lots...", missing_states)
-    ),
+  latest = target(
+    get_latest(all_data)
+  ),
+  
+  # latest = all_data %>% 
+  #   filter(!is.na(forecast_date)) %>%
+  #   group_by(team, model) %>%
+  #   dplyr::filter(forecast_date == max(forecast_date)) %>%
+  #   ungroup() %>%
+  #   tidyr::separate(target, into=c("n_unit","unit","ahead","inc_cum","death_cases"),
+  #          remove = FALSE),
+  # 
   
   
-  latest_targets =latest %>%
-    dplyr::group_by(team, model, forecast_date, type, unit, ahead, inc_cum, death_cases) %>%
-    dplyr::summarize(max_n = max(as.numeric(n_unit))) %>%
-    dplyr::ungroup() %>%
-    dplyr::mutate(target = paste(unit, ahead, inc_cum, death_cases)) %>%
-    dplyr::select(team, model, forecast_date, type, max_n, target) %>%
-    dplyr::arrange(team, model, forecast_date, type, target),
+  latest_locations = target(
+    get_latest_locations(latest)
+  ),
+  # latest_locations = latest %>%
+  #   dplyr::group_by(team, model, forecast_date) %>%
+  #   dplyr::summarize(US = ifelse(any(abbreviation == "US"), "Yes", "-"),
+  #                    n_states = sum(state.abb %in% abbreviation),
+  #                    other = paste(unique(setdiff(abbreviation, c(state.abb,"US"))),
+  #                                  collapse = " "),
+  #                    missing_states = paste(unique(setdiff(state.abb, abbreviation)),
+  #                                           collapse = " "),
+  #                    missing_states = ifelse(missing_states == paste(state.abb, collapse = " "), 
+  #                                            "all", missing_states),
+  #                    missing_states = ifelse(nchar(missing_states) > 7, 
+  #                                            "...lots...", missing_states)
+  #   ),
   
+  latest_targets = target(
+    get_latest_targets(latest)
+  ),
+  # latest_targets =latest %>%
+  #   dplyr::group_by(team, model, forecast_date, type, unit, ahead, inc_cum, death_cases) %>%
+  #   dplyr::summarize(max_n = max(as.numeric(n_unit))) %>%
+  #   dplyr::ungroup() %>%
+  #   dplyr::mutate(target = paste(unit, ahead, inc_cum, death_cases)) %>%
+  #   dplyr::select(team, model, forecast_date, type, max_n, target) %>%
+  #   dplyr::arrange(team, model, forecast_date, type, target),
+  # 
   # Quantiles
   quantiles = list(
     full = sprintf("%.3f", c(0.01, 0.025, seq(0.05, 0.95, by = 0.05), 0.975, 0.99)),
