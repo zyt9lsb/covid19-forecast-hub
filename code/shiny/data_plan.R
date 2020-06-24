@@ -86,7 +86,7 @@ data_plan <- drake::drake_plan(
     get_latest_plot_data(latest)
     ),
     
-  outputs = c(all_data,fourweek_date,truth,truth_sources,latest,latest_locations,latest_targets,quantiles,latest_quantiles,latest_quantiles_summary,ensemble,g_ensemble_quantiles,latest_plot_data),
+  #outputs = c(all_data,fourweek_date,truth,truth_sources,latest,latest_locations,latest_targets,quantiles,latest_quantiles,latest_quantiles_summary,ensemble,g_ensemble_quantiles,latest_plot_data),
   #raw_data_out = saveRDS(raw_data, file = file_out("code/shiny/drake_files/raw_data.RDS"))
   all_data_out = saveRDS(all_data, file = file_out("code/shiny/drake_files/all_data.RDS")),
   fourweek_date_out = saveRDS(fourweek_date, file = file_out("code/shiny/drake_files/fourweek_date.RDS")),
@@ -95,7 +95,6 @@ data_plan <- drake::drake_plan(
   latest_out =saveRDS(latest, file = file_out("code/shiny/drake_files/latest.RDS")),
   latest_locations_out =saveRDS(latest_locations, file = file_out("code/shiny/drake_files/latest_locations.RDS")),
   latest_targets_out =saveRDS(latest_targets, file = file_out("code/shiny/drake_files/latest_targets.RDS")),
-  quantiles_out =saveRDS(quantiles, file = file_out("code/shiny/drake_files/quantiles.RDS")),
   latest_quantiles_out =saveRDS(latest_quantiles, file = file_out("code/shiny/drake_files/latest_quantiles.RDS")),
   latest_quantiles_summary_out =saveRDS(latest_quantiles_summary, file = file_out("code/shiny/drake_files/latest_quantiles_summary.RDS")),
   ensemble_out =saveRDS(ensemble, file = file_out("code/shiny/drake_files/ensemble.RDS")),
@@ -104,7 +103,7 @@ data_plan <- drake::drake_plan(
 )
 
 r = data_plan$target
-drake::make(data_plan,cache = cache)
+drake::make(data_plan)
 drake::vis_drake_graph(data_plan)
 
 
