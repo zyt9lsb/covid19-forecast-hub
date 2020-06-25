@@ -1,14 +1,5 @@
-library("drake")
-library("dplyr")
-library("readr")
-library("purrr")
-library("tidyverse")
-library("miceadds")
-#source("code/shiny/read_processed_data.R")
+R.utils::sourceDirectory( "code/shiny/R")
 source("code/processing-fxns/get_next_saturday.R")
-
-#load functions 
-miceadds::source.all( "code/shiny/R", grepstring="\\.R",  print.source=TRUE)
 
 cache <- storr::storr_environment()
 
