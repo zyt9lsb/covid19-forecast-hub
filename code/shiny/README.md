@@ -8,7 +8,9 @@ For now, the data-processed/ files should be used.
 If you want to try out this new version of the shiny app you can use 
 
     source("code/shiny/new_plan.R")
+    drake::make(plan)
     source("code/shiny/new_app.R")
+    shinyApp(ui = ui, server = server) # if it doesn't automatically run
     
 from the base folder of the repository.
 

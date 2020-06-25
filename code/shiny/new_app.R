@@ -1,6 +1,9 @@
 library("drake")
 library("tidyverse")
 library("shiny")
+library("DT")
+
+options(DT.options = list(pageLength = 50))
 
 source("code/processing-fxns/get_next_saturday.R")
 
