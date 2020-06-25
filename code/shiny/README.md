@@ -5,6 +5,13 @@ The shiny app is complementary to the COVID-19 Forecast Hub
 These files are a work-in-progress version of the files in [data-processed/](../../data-processed).
 For now, the data-processed/ files should be used.
 
+If you want to try out this new version of the shiny app you can use 
+
+    source("code/shiny/new_plan.R")
+    source("code/shiny/new_app.R")
+    
+from the base folder of the repository.
+
 ## Background
 
 Originally the app was designed to be an internal tool for the COVID-19 Forecast
@@ -35,7 +42,6 @@ to the Hub.
 
 A number of upgrades to the shiny app are on the to do list:
 
-- Fix paths that have broken due to moving the code
 - Improve speed of reading the data in
   - Use [fread](https://www.rdocumentation.org/packages/data.table/versions/1.12.8/topics/fread) rather than [read_csv](https://readr.tidyverse.org/reference/read_delim.html)
   - Use [drake](https://github.com/ropensci/drake) to provide GNU make functionality

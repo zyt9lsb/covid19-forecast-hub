@@ -1,4 +1,4 @@
-R.utils::sourceDirectory( "code/shiny/R")
+R.utils::sourceDirectory("code/shiny/R")
 source("code/processing-fxns/get_next_saturday.R")
 
 cache <- storr::storr_environment()
@@ -29,7 +29,7 @@ data_plan <- drake::drake_plan(
   fourweek_date = get_next_saturday(Sys.Date() + 3*7),
   
   truth = target(
-    get_truth(locations)
+    get_truth_old(locations)
   ),
   truth_sources = unique(truth$source),
    
