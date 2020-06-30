@@ -3,6 +3,7 @@ R.utils::sourceDirectory("code/shiny/R",modifiedOnly=FALSE)
 forecast_files        = get_forecast_files()
 latest_forecast_files = get_latest_forecast_files(forecast_files)
 
+# only keep team_model? 
 #ids = rlang::syms(lapply(latest_forecast_files, function(f) unlist(strsplit(f, "/"))[2]))
 
 plan = drake::drake_plan(
@@ -11,13 +12,12 @@ plan = drake::drake_plan(
   ##############
   # Latest Forecasts
   
-  # .id = FALSE use integer indices as target name suffixes.
   latest_forecasts = target(
     read_forecast_file(file_in(file)) %>%
       dplyr::left_join(locations, by = c("location")) %>%
       tidyr::separate(target, into=c("n_unit","unit","ahead","inc_cum","death_cases"),
                       remove = FALSE),
-    transform = map(file = !!latest_forecast_files, .id = FALSE)
+    transform = map(file = !!latest_forecast_files)
   ),
   
   latest = target(
