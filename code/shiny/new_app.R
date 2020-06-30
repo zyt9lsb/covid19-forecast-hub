@@ -58,7 +58,7 @@ ui <- navbarPage(
                selectInput("abbreviation", "Location", sort(unique(latest_plot_data$abbreviation   ))),
                selectInput("sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
                dateRangeInput("dates", "Date range", start = "2020-03-01", end = fourweek_date)
-               ), 
+             ), 
              mainPanel(
                plotOutput("latest_plot")
              )
@@ -129,7 +129,7 @@ server <- function(input, output, session) {
   latest_tm   <- reactive({ latest_t()       %>% filter(model         == input$model) })
   latest_tmt  <- reactive({ latest_tm()      %>% filter(simple_target == input$target) })
   latest_tmtl <- reactive({ latest_tmt()     %>% filter(abbreviation    == input$abbreviation) })
-
+  
   truth_plot_data <- reactive({ 
     input_simple_target <- unique(paste(
       latest_tmtl()$unit, "ahead", latest_tmtl()$inc_cum, latest_tmtl()$death_cases))

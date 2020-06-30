@@ -1,7 +1,10 @@
-R.utils::sourceDirectory("code/shiny/R")
+R.utils::sourceDirectory("code/shiny/R",modifiedOnly=FALSE)
 
 forecast_files        = get_forecast_files()
 latest_forecast_files = get_latest_forecast_files(forecast_files)
+
+# only keep team_model? 
+#ids = rlang::syms(lapply(latest_forecast_files, function(f) unlist(strsplit(f, "/"))[2]))
 
 plan = drake::drake_plan(
   locations = get_locations(file_in("data-locations/locations.csv")),
