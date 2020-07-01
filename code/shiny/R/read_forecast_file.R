@@ -1,15 +1,15 @@
 read_forecast_file <- function(f) {
-  readr::read_csv(f,
-                  col_types = readr::cols_only(
-                    forecast_date   = readr::col_date(format = ""),
-                    target          = readr::col_character(),
-                    target_end_date = readr::col_date(format = ""),
-                    location        = readr::col_character(),
-                    type            = readr::col_character(),
-                    quantile        = readr::col_double(),
-                    value           = readr::col_double()
-                  )
+  data.table::fread(f,
+                    colClasses =c(
+                      "forecast_date"   = "Date",
+                      "target"          = "character",
+                      "target_end_date" = "Date",
+                      "location"        = "character",
+                      "type"            = "character",
+                      "quantile"        = "double",
+                      "value"           = "double")
   ) %>%
+    dplyr::mutate(quantile = as.numeric(quantile)) %>%
     dplyr::mutate(file = f) %>%
     tidyr::separate(file, into = c("period","processed","team","model",
                                    "year","month","day","team2","model_etc"), 
