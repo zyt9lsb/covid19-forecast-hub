@@ -95,3 +95,10 @@ plan = drake::drake_plan(
     dplyr::left_join(locations, by = c("location"))
   ##############
 )
+
+shiny <- c("truth",
+           "latest_locations",
+           "latest_targets",
+           "latest_quantiles",
+           "latest_quantiles_summary",
+           "latest_plot_data")

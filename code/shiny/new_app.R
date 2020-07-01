@@ -11,7 +11,7 @@ source("code/processing-fxns/get_next_saturday.R")
 fourweek_date = get_next_saturday(Sys.Date() + 3*7)
 loadd(truth)
 truth_sources = unique(truth$source)
-loadd(latest)
+# loadd(latest)
 loadd(latest_locations)
 loadd(latest_targets)
 loadd(latest_quantiles)
@@ -46,8 +46,8 @@ ui <- navbarPage(
   #          # DT::DTOutput("ensemble_quantiles"),
   #          plotOutput("ensemble_quantile_plot")),
   
-  tabPanel("Latest",           
-           DT::DTOutput("latest")),
+  # tabPanel("Latest",           
+  #          DT::DTOutput("latest")),
   
   tabPanel("Latest Viz",
            sidebarLayout(
