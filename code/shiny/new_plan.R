@@ -4,7 +4,7 @@ forecast_files        = get_forecast_files()
 latest_forecast_files = get_latest_forecast_files(forecast_files)
 
 # only keep team_model? 
-#ids = rlang::syms(lapply(latest_forecast_files, function(f) unlist(strsplit(f, "/"))[2]))
+ids = rlang::syms(lapply(latest_forecast_files, function(f) unlist(strsplit(f, "/"))[2]))
 
 plan = drake::drake_plan(
   locations = get_locations(file_in("data-locations/locations.csv")),
@@ -17,7 +17,7 @@ plan = drake::drake_plan(
       dplyr::left_join(locations, by = c("location")) %>%
       tidyr::separate(target, into=c("n_unit","unit","ahead","inc_cum","death_cases"),
                       remove = FALSE),
-    transform = map(file = !!latest_forecast_files)
+    transform = map(file = !!latest_forecast_files,id_var = !!paste0(ids,"_"), .id=id_var)
   ),
   
   latest = target(
@@ -28,7 +28,7 @@ plan = drake::drake_plan(
   # Locations
   latest_locations_by_model = target(
     get_forecast_locations(latest_forecasts),
-    transform = map(latest_forecasts)
+    transform = map(latest_forecasts,id_var = !!paste0(ids,"_"), .id=id_var)
   ),
   
   latest_locations = target(
@@ -39,12 +39,12 @@ plan = drake::drake_plan(
   # Quantiles
   latest_quantiles_by_model = target(
     get_forecast_quantiles(latest_forecasts),
-    transform = map(latest_forecasts)
+    transform = map(latest_forecasts,id_var = !!paste0(ids,"_"), .id=id_var)
   ),
   
   latest_quantiles_summary_by_model = target(
     get_forecast_quantiles_summary(latest_quantiles_by_model),
-    transform = map(latest_quantiles_by_model)
+    transform = map(latest_quantiles_by_model,id_var = !!paste0(ids,"_"), .id=id_var)
   ),
   
   latest_quantiles = target(
@@ -60,7 +60,7 @@ plan = drake::drake_plan(
   # Targets
   latest_targets_by_model = target(
     get_forecast_targets(latest_forecasts),
-    transform = map(latest_forecasts)
+    transform = map(latest_forecasts,id_var = !!paste0(ids,"_"), .id=id_var)
   ),
   
   latest_targets = target(
@@ -73,7 +73,7 @@ plan = drake::drake_plan(
   # Plot data
   latest_plot_data_by_model = target(
     get_latest_plot_data(latest_forecasts),
-    transform = map(latest_forecasts)
+    transform = map(latest_forecasts,id_var = !!paste0(ids,"_"), .id=id_var)
   ),
   
   latest_plot_data = target(
