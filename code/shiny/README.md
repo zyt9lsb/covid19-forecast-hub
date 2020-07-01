@@ -50,3 +50,4 @@ A number of upgrades to the shiny app are on the to do list:
 - Allow users to specify default team and model through [options](https://stat.ethz.ch/R-manual/R-devel/library/base/html/options.html)
 - Maintain target and location while changing team and model
 - Display figures rather than tables
+- Remove "Latest" tab and associated `loadd(latest)` from the app as this is the slowest step
