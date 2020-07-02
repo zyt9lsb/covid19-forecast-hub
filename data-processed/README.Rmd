@@ -154,6 +154,12 @@ We have created [a csv file](../template/covid19-death-forecast-dates.csv) descr
 
 For week-ahead forecasts with `forecast_date` of Sunday or Monday of EW12, a 1 week ahead forecast corresponds to EW12 and should have `target_end_date` of the Saturday of EW12. For week-ahead forecasts with `forecast_date` of Tuesday through Saturday of EW12, a 1 week ahead forecast corresponds to EW13 and should have `target_end_date` of the Saturday of EW13. 
 
+For week-ahead forecasts with `forecast_date` of Sunday or Monday of EW12, 
+a 1 week ahead forecast corresponds to EW12 and should have `target_end_date` of 
+the Saturday of EW12. For week-ahead forecasts with `forecast_date` of Tuesday 
+through Saturday of EW12, a 1 week ahead forecast corresponds to EW13 and should 
+have `target_end_date` of the Saturday of EW13. 
+
 #### N wk ahead cum death
 
 This target is the cumulative number of deaths predicted by the model up to 
@@ -202,7 +208,6 @@ a 1 day ahead inc hosp forecast corresponds to the number of incident
 hospitalizations on Tuesday, 2 day ahead to Wednesday, etc.... 
 
 Currently there is no "gold standard" for hospitalization data. 
-
 
 
 
