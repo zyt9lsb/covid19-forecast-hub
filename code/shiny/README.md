@@ -7,8 +7,7 @@ For now, the data-processed/ files should be used.
 
 If you want to try out this new version of the shiny app you can use 
 
-    source("code/shiny/_drake.R")
-    drake::r_make(plan, target = shiny)
+    r_make("code/shiny/_drake.R")
     source("code/shiny/app.R")
     shinyApp(ui = ui, server = server) # if it doesn't automatically run
     
