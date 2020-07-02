@@ -3,15 +3,26 @@ R.utils::sourceDirectory("code/shiny/R",modifiedOnly=FALSE)
 forecast_files        = get_forecast_files()
 latest_forecast_files = get_latest_forecast_files(forecast_files)
 
-# only keep team_model? 
 ids = rlang::syms(lapply(latest_forecast_files, function(f) unlist(strsplit(as.character(f), "/"))[2]))
 
 plan = drake::drake_plan(
   locations = get_locations(file_in("data-locations/locations.csv")),
   
   ##############
-  # Latest Forecasts
+  # All Forecasts
+  raw_data = target(
+    read_forecast_file(file_in(file)) %>%
+      dplyr::left_join(locations, by = c("location")),
+    transform = map(file = !!forecast_files)
+  ),
   
+  all_forecasts = target(
+    dplyr::bind_rows(raw_data),
+    transform = combine(raw_data)
+  ),
+  
+  ##############
+  # Latest Forecasts
   latest_forecasts = target(
     read_forecast_file(file_in(file)) %>%
       dplyr::left_join(locations, by = c("location")) %>%
@@ -102,3 +113,7 @@ shiny <- c("truth",
            "latest_quantiles",
            "latest_quantiles_summary",
            "latest_plot_data")
+
+all_forecasts <- c("all_forecasts")
+
+latest <-c("latest")
