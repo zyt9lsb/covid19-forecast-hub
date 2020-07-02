@@ -3,5 +3,6 @@ get_locations = function(file) {
                     colClasses=c(
                       "abbreviation"  = "character",
                       "location"      = "character",
-                      "location_name" = "character"))
+                      "location_name" = "character"),
+                    nThread = 1)
 }

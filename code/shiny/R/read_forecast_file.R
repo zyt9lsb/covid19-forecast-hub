@@ -7,7 +7,8 @@ read_forecast_file <- function(f) {
                       "location"        = "character",
                       "type"            = "character",
                       "quantile"        = "double",
-                      "value"           = "double")
+                      "value"           = "double"),
+                    nThread = 1
   ) %>%
     dplyr::mutate(quantile = as.numeric(quantile)) %>%
     dplyr::mutate(file = f) %>%
