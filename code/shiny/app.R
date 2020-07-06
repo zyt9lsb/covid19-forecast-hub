@@ -52,8 +52,8 @@ ui <- navbarPage(
   tabPanel("Latest Viz",
            sidebarLayout(
              sidebarPanel(
-               selectInput("team",         "Team", sort(unique(latest_plot_data$team         )), "IHME"),
-               selectInput("model",       "Model", sort(unique(latest_plot_data$model        ))),
+               selectInput("team",         "Team", sort(unique(latest_plot_data$team         )), shiny::getShinyOption("default_team",default = "IHME")),
+               selectInput("model",       "Model", sort(unique(latest_plot_data$model        )),shiny::getShinyOption("default_model")),
                selectInput("target",     "Target", sort(unique(latest_plot_data$simple_target))),
                selectInput("abbreviation", "Location", sort(unique(latest_plot_data$abbreviation   ))),
                selectInput("sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
@@ -65,6 +65,19 @@ ui <- navbarPage(
            )
   ),
   
+  tabPanel("Latest Viz by Location",
+           sidebarLayout(
+             sidebarPanel (
+               selectInput("loc_abbreviation", "Location", sort(unique(latest_plot_data$abbreviation   ))),
+               selectInput("loc_target",     "Target", sort(unique(latest_plot_data$simple_target))),
+               selectInput("loc_sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
+               dateRangeInput("loc_dates", "Date range", start = "2020-03-01", end = fourweek_date)
+             ),
+             mainPanel(
+               plotOutput("latest_plot_by_location")
+             )
+           )
+  ),
   # tabPanel("All",              
   #          DT::DTOutput("all_data")),
   
@@ -129,7 +142,7 @@ server <- function(input, output, session) {
   latest_tm   <- reactive({ latest_t()       %>% filter(model         == input$model) })
   latest_tmt  <- reactive({ latest_tm()      %>% filter(simple_target == input$target) })
   latest_tmtl <- reactive({ latest_tmt()     %>% filter(abbreviation    == input$abbreviation) })
-  
+
   truth_plot_data <- reactive({ 
     input_simple_target <- unique(paste(
       latest_tmtl()$unit, "ahead", latest_tmtl()$inc_cum, latest_tmtl()$death_cases))
@@ -179,6 +192,68 @@ server <- function(input, output, session) {
       theme_bw() +
       theme(plot.title = element_text(color = ifelse(Sys.Date() - forecast_date > 6, "red", "black")))
   })
+  
+  
+  #############################################################################
+  # Latest viz by Location: Filter data based on user input
+  latest_loc_l <- reactive({ latest_plot_data    %>% filter(abbreviation    == input$loc_abbreviation) })
+  latest_loc_lt  <- reactive({ latest_loc_l()     %>% filter(simple_target == input$loc_target) })
+  
+  observe({
+    targets <- sort(unique(latest_loc_l()$simple_target))
+    updateSelectInput(session, "loc_target", choices = targets, 
+                      selected = ifelse("wk ahead cum death" %in% targets, 
+                                        "wk ahead cum death", 
+                                        targets[1]))
+  })
+
+  truth_loc_plot_data <- reactive({ 
+    input_simple_target <- unique(paste(
+      latest_loc_lt()$unit, "ahead", latest_loc_lt()$inc_cum, latest_loc_lt()$death_cases))
+    
+    tmp = truth %>% 
+      filter(abbreviation == input$loc_abbreviation,
+             grepl(input_simple_target, simple_target),
+             source %in% input$loc_sources)
+  })
+  
+  set_shiny_plot_height <- function(session, output_width_name){
+    function() { 
+      session$clientData[[output_width_name]] *2
+    }
+  }
+  
+  output$latest_plot_by_location      <- shiny::renderPlot({
+    d    <- latest_loc_lt()
+    team <- unique(d$team)
+    model <- unique(d$model)
+    forecast_date <- unique(d$forecast_date)
+    
+    ggplot(d, aes(x = target_end_date)) + 
+      geom_ribbon(aes(ymin = `0.025`, ymax = `0.975`, fill = "95%")) +
+      geom_ribbon(aes(ymin = `0.25`, ymax = `0.75`, fill = "50%")) +
+      scale_fill_manual(name = "", values = c("95%" = "lightgray", "50%" = "gray")) +
+      
+      geom_point(aes(y=`0.5`, color = "median")) + geom_line( aes(y=`0.5`, color = "median")) + 
+      geom_point(aes(y=point, color = "point")) + geom_line( aes(y=point, color = "point")) + 
+      
+      scale_color_manual(name = "", values = c("median" = "slategray", "point" = "black")) +
+      
+      ggnewscale::new_scale_color() +
+      geom_line(data = truth_loc_plot_data(),
+                aes(x = date, y = value, 
+                    linetype = source, color = source, group = source)) +
+      xlim(input$loc_dates) + 
+      facet_wrap(~team+model,ncol = 3,labeller = label_wrap_gen(multi_line=FALSE))+
+      labs(x = "Date", y="Number", 
+           title = paste("Forecast date:", forecast_date)) +
+      theme_bw() +
+      theme(strip.text.x = element_text(size = 8),plot.title = element_text(color = ifelse(Sys.Date() - forecast_date > 6, "red", "black")))
+      
+    
+    
+  },height =set_shiny_plot_height(session,"output_latest_plot_by_location_width"))
+  
   
   output$all_data         <- DT::renderDT(all_data,         filter = "top")
 }

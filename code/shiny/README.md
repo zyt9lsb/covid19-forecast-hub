@@ -13,6 +13,13 @@ If you want to try out this new version of the shiny app you can use
     
 from the base folder of the repository.
 
+If you would like to set default team and default model to Latest Viz in shiny app,
+please add to ```.Rprofile``` and then restart R session
+
+    shiny::shinyOptions(default_team = "default team name")
+    shiny::shinyOptions(default_model = "default model name")
+
+
 ## Background
 
 Originally the app was designed to be an internal tool for the COVID-19 Forecast
