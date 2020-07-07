@@ -28,8 +28,19 @@ ui <- navbarPage(
            DT::DTOutput("latest_locations")),
   
   tabPanel("Latest targets",  
-           h5("max_n: the farthest ahead forecast for this target (does not guarantee that all earlier targets exist)"),
-           DT::DTOutput("latest_targets")),
+            h5("max_n: the farthest ahead forecast for this target (does not guarantee that all earlier targets exist)"),
+            DT::DTOutput("old_latest_targets")),
+  tabPanel("New Latest targets",  
+           sidebarLayout(
+             sidebarPanel(
+               selectInput("targets_type",     "Type", sort(unique(latest_targets$type))),
+               selectInput("targets_target",     "Target", sort(unique(latest_targets$target)))
+             ), 
+             mainPanel(
+               plotOutput("latest_targets")
+             )
+           )
+  ),
   
   tabPanel("Latest quantiles", 
            h3("Quantiles collapsed over targets"),
@@ -102,7 +113,7 @@ checknull <- NULL
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
   
-  output$latest_targets   <- DT::renderDT(latest_targets,   filter = "top")
+  output$old_latest_targets   <- DT::renderDT(latest_targets,   filter = "top")
   output$latest_locations <- DT::renderDT(latest_locations, filter = "top")
   output$latest_quantiles <- DT::renderDT(latest_quantiles, filter = "top")
   output$latest_quantiles_summary <- DT::renderDT(latest_quantiles_summary, filter = "top")
@@ -223,36 +234,70 @@ server <- function(input, output, session) {
     }
   }
   
+  
+
+  
   output$latest_plot_by_location      <- shiny::renderPlot({
     d    <- latest_loc_lt()
     team <- unique(d$team)
     model <- unique(d$model)
     forecast_date <- unique(d$forecast_date)
-    
+  
     ggplot(d, aes(x = target_end_date)) + 
       geom_ribbon(aes(ymin = `0.025`, ymax = `0.975`, fill = "95%")) +
       geom_ribbon(aes(ymin = `0.25`, ymax = `0.75`, fill = "50%")) +
       scale_fill_manual(name = "", values = c("95%" = "lightgray", "50%" = "gray")) +
-      
+        
       geom_point(aes(y=`0.5`, color = "median")) + geom_line( aes(y=`0.5`, color = "median")) + 
       geom_point(aes(y=point, color = "point")) + geom_line( aes(y=point, color = "point")) + 
-      
+        
       scale_color_manual(name = "", values = c("median" = "slategray", "point" = "black")) +
-      
+        
       ggnewscale::new_scale_color() +
       geom_line(data = truth_loc_plot_data(),
                 aes(x = date, y = value, 
                     linetype = source, color = source, group = source)) +
       xlim(input$loc_dates) + 
       facet_wrap(~team+model,ncol = 3,labeller = label_wrap_gen(multi_line=FALSE))+
-      labs(x = "Date", y="Number", 
-           title = paste("Forecast date:", forecast_date)) +
+      labs(x = "Date", y="Number", title = paste("Forecast date:", forecast_date)) +
       theme_bw() +
       theme(strip.text.x = element_text(size = 8),plot.title = element_text(color = ifelse(Sys.Date() - forecast_date > 6, "red", "black")))
-      
+        
     
     
   },height =set_shiny_plot_height(session,"output_latest_plot_by_location_width"))
+
+  #############################################################################
+  # New Latest Targets: Filter data based on user input
+  
+  latest_t_ty    <- reactive({ latest_targets %>% filter( type         == input$targets_type) })
+  latest_t_t     <- reactive({ latest_t_ty()  %>% filter(target        == input$targets_target) })
+  
+  observe({
+    targets <- sort(unique(latest_t_ty()$target))
+    updateSelectInput(session, "targets_target", choices = targets, 
+                      selected = ifelse("wk ahead cum death" %in% targets, 
+                                        "wk ahead cum death", 
+                                        targets[1]))
+  })
+  
+  
+  output$latest_targets <-shiny::renderPlot({
+    d    <- latest_t_t()
+    d <- d %>% dplyr::mutate(team_model = paste(d$team,d$model,sep="_"))
+    dates <- unique(d$forecast_date)
+
+    
+    ggplot(d, aes(x=forecast_date,y=reorder(team_model,forecast_date)))+
+      geom_segment(aes(x = as.Date(min(dates))-1, y = reorder(team_model,forecast_date), 
+                       xend = as.Date(forecast_date,"%Y-%m-%d"), yend = reorder(team_model,forecast_date))) +
+      geom_point()+
+      geom_vline(xintercept = Sys.Date(), colour="red")+
+      scale_x_date(breaks = sort(c(seq(as.Date(min(dates))-1, as.Date(max(dates)),length.out=7), Sys.Date())),limits = c(as.Date(min(dates))-1, Sys.Date()+1),date_labels="%m/%d")+
+      labs(x="Latest Forecast Date", y = "Model",title = paste("System date:", Sys.Date()))+
+      theme(axis.text.x = element_text(angle = 60),plot.title = element_text(color = "red"))
+  },height=800)
+  
   
   
   output$all_data         <- DT::renderDT(all_data,         filter = "top")

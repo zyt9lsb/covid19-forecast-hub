@@ -10,7 +10,8 @@ read_forecast_file <- function(f) {
                       "value"           = "double"),
                     nThread = 1
   ) %>%
-    dplyr::mutate(quantile = as.numeric(quantile)) %>%
+    dplyr::mutate(quantile = as.numeric(quantile),
+                  type = tolower(type)) %>%
     dplyr::mutate(file = f) %>%
     tidyr::separate(file, into = c("period","processed","team","model",
                                    "year","month","day","team2","model_etc"), 
