@@ -79,7 +79,8 @@ ui <- navbarPage(
   tabPanel("Latest Viz by Location",
            sidebarLayout(
              sidebarPanel (
-               selectInput("loc_abbreviation", "Location", sort(unique(latest_plot_data$abbreviation   ))),
+               selectInput("loc_state", "State", sort(unique(latest_plot_data$abbreviation))),
+               selectInput("loc_county", "County", sort(unique(latest_plot_data$location_name))),
                selectInput("loc_target",     "Target", sort(unique(latest_plot_data$simple_target))),
                selectInput("loc_sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
                dateRangeInput("loc_dates", "Date range", start = "2020-03-01", end = fourweek_date)
@@ -207,11 +208,17 @@ server <- function(input, output, session) {
   
   #############################################################################
   # Latest viz by Location: Filter data based on user input
-  latest_loc_l <- reactive({ latest_plot_data    %>% filter(abbreviation    == input$loc_abbreviation) })
-  latest_loc_lt  <- reactive({ latest_loc_l()     %>% filter(simple_target == input$loc_target) })
+  latest_loc_l <- reactive({ latest_plot_data    %>% filter(abbreviation    == input$loc_state) })
+  latest_loc_lc <- reactive({ latest_loc_l()     %>% filter(location_name == input$loc_county) })
+  latest_loc_ltc  <- reactive({ latest_loc_lc()     %>% filter(simple_target == input$loc_target) })
   
   observe({
-    targets <- sort(unique(latest_loc_l()$simple_target))
+    counties <- sort(unique(latest_loc_l()$location_name))
+    updateSelectInput(session, "loc_county", choices = counties, selected = counties[1])
+  })
+  
+  observe({
+    targets <- sort(unique(latest_loc_lc()$simple_target))
     updateSelectInput(session, "loc_target", choices = targets, 
                       selected = ifelse("wk ahead cum death" %in% targets, 
                                         "wk ahead cum death", 
@@ -220,10 +227,10 @@ server <- function(input, output, session) {
 
   truth_loc_plot_data <- reactive({ 
     input_simple_target <- unique(paste(
-      latest_loc_lt()$unit, "ahead", latest_loc_lt()$inc_cum, latest_loc_lt()$death_cases))
+      latest_loc_ltc()$unit, "ahead", latest_loc_ltc()$inc_cum, latest_loc_ltc()$death_cases))
     
     tmp = truth %>% 
-      filter(abbreviation == input$loc_abbreviation,
+      filter(abbreviation == input$loc_state,
              grepl(input_simple_target, simple_target),
              source %in% input$loc_sources)
   })
@@ -238,7 +245,7 @@ server <- function(input, output, session) {
 
   
   output$latest_plot_by_location      <- shiny::renderPlot({
-    d    <- latest_loc_lt()
+    d    <- latest_loc_ltc()
     team <- unique(d$team)
     model <- unique(d$model)
     forecast_date <- unique(d$forecast_date)
