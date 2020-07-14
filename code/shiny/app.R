@@ -67,6 +67,7 @@ ui <- navbarPage(
                selectInput("model",       "Model", sort(unique(latest_plot_data$model        )),shiny::getShinyOption("default_model")),
                selectInput("target",     "Target", sort(unique(latest_plot_data$simple_target))),
                selectInput("abbreviation", "Location", sort(unique(latest_plot_data$abbreviation   ))),
+               selectInput("county", "County", sort(unique(latest_plot_data$location_name  ))),
                selectInput("sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
                dateRangeInput("dates", "Date range", start = "2020-03-01", end = fourweek_date)
              ), 
@@ -83,6 +84,8 @@ ui <- navbarPage(
                selectInput("loc_county", "County", sort(unique(latest_plot_data$location_name))),
                selectInput("loc_target",     "Target", sort(unique(latest_plot_data$simple_target))),
                selectInput("loc_sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
+               selectInput("loc_team",         "Team", sort(unique(latest_plot_data$team         )), multiple = TRUE),
+               selectInput("loc_model",       "Model", sort(unique(latest_plot_data$model        )),multiple = TRUE),
                dateRangeInput("loc_dates", "Date range", start = "2020-03-01", end = fourweek_date)
              ),
              mainPanel(
@@ -107,9 +110,9 @@ ui <- navbarPage(
   selected = "Latest Viz"
 )
 
-filter_names <- c("input$team", "input$model","input$target", "input$abbreviation")
-filters <- c("team %in% input$team","model %in% input$model","target %in% input$target", "abbreviation %in% input$abbreviation")
-checknull <- NULL
+#filter_names <- c("input$team", "input$model","input$target", "input$abbreviation")
+#filters <- c("team %in% input$team","model %in% input$model","target %in% input$target", "abbreviation %in% input$abbreviation")
+#checknull <- NULL
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
@@ -149,18 +152,25 @@ server <- function(input, output, session) {
                                         abbreviations[1]))
   })
   
+  observe({
+    counties <- sort(unique(latest_tmtl()$location_name))
+    updateSelectInput(session, "county", choices = counties, selected =counties[1])
+  })
+  
   
   latest_t    <- reactive({ latest_plot_data %>% filter(team          == input$team) })
   latest_tm   <- reactive({ latest_t()       %>% filter(model         == input$model) })
   latest_tmt  <- reactive({ latest_tm()      %>% filter(simple_target == input$target) })
   latest_tmtl <- reactive({ latest_tmt()     %>% filter(abbreviation    == input$abbreviation) })
+  latest_tmtlc <- reactive({ latest_tmtl()     %>% filter(location_name    == input$county) })
 
   truth_plot_data <- reactive({ 
     input_simple_target <- unique(paste(
-      latest_tmtl()$unit, "ahead", latest_tmtl()$inc_cum, latest_tmtl()$death_cases))
+      latest_tmtlc()$unit, "ahead", latest_tmtlc()$inc_cum, latest_tmtlc()$death_cases))
     
     tmp = truth %>% 
       filter(abbreviation == input$abbreviation,
+             location_name ==input$county,
              grepl(input_simple_target, simple_target),
              source %in% input$sources)
   })
@@ -169,7 +179,7 @@ server <- function(input, output, session) {
   
   
   output$latest_plot      <- shiny::renderPlot({
-    d    <- latest_tmtl()
+    d    <- latest_tmtlc()
     team <- unique(d$team)
     model <- unique(d$model)
     forecast_date <- unique(d$forecast_date)
@@ -211,6 +221,8 @@ server <- function(input, output, session) {
   latest_loc_l <- reactive({ latest_plot_data    %>% filter(abbreviation    == input$loc_state) })
   latest_loc_lc <- reactive({ latest_loc_l()     %>% filter(location_name == input$loc_county) })
   latest_loc_ltc  <- reactive({ latest_loc_lc()     %>% filter(simple_target == input$loc_target) })
+  latest_loc_ltct    <- reactive({ latest_loc_ltc() %>% filter(team     %in% input$loc_team) })
+  latest_loc_ltctm   <- reactive({ latest_loc_ltc()  %>% filter(model   %in% input$loc_model) })
   
   observe({
     counties <- sort(unique(latest_loc_l()$location_name))
@@ -224,28 +236,39 @@ server <- function(input, output, session) {
                                         "wk ahead cum death", 
                                         targets[1]))
   })
+  
+  observe({
+    teams <- sort(unique(latest_loc_ltc()$team))
+    updateSelectInput(session, "loc_team", choices = teams, selected = teams[1])
+  })
+  
+  observe({
+    models <- sort(unique(latest_loc_ltct()$model))
+    updateSelectInput(session, "loc_model", choices = models, selected = models[1])
+  })
 
   truth_loc_plot_data <- reactive({ 
     input_simple_target <- unique(paste(
-      latest_loc_ltc()$unit, "ahead", latest_loc_ltc()$inc_cum, latest_loc_ltc()$death_cases))
+      latest_loc_ltctm()$unit, "ahead", latest_loc_ltctm()$inc_cum, latest_loc_ltctm()$death_cases))
     
     tmp = truth %>% 
       filter(abbreviation == input$loc_state,
+             location_name == input$loc_county,
              grepl(input_simple_target, simple_target),
              source %in% input$loc_sources)
   })
   
-  set_shiny_plot_height <- function(session, output_width_name){
-    function() { 
-      session$clientData[[output_width_name]] *2
-    }
-  }
+  #set_shiny_plot_height <- function(session, output_width_name){
+  #  function() { 
+  #    session$clientData[[output_width_name]] *2
+  #  }
+  #}
   
   
 
   
   output$latest_plot_by_location      <- shiny::renderPlot({
-    d    <- latest_loc_ltc()
+    d    <- latest_loc_ltctm()
     team <- unique(d$team)
     model <- unique(d$model)
     forecast_date <- unique(d$forecast_date)
@@ -264,6 +287,13 @@ server <- function(input, output, session) {
       geom_line(data = truth_loc_plot_data(),
                 aes(x = date, y = value, 
                     linetype = source, color = source, group = source)) +
+      scale_color_manual(values = c("JHU-CSSE" = "green",
+                                    "USAFacts" = "seagreen",
+                                    "NYTimes"  = "darkgreen")) +
+      
+      scale_linetype_manual(values = c("JHU-CSSE" = 1,
+                                       "USAFacts" = 2,
+                                       "NYTimes"  = 3)) +
       xlim(input$loc_dates) + 
       facet_wrap(~team+model,ncol = 3,labeller = label_wrap_gen(multi_line=FALSE))+
       labs(x = "Date", y="Number", title = paste("Forecast date:", forecast_date)) +
@@ -272,7 +302,7 @@ server <- function(input, output, session) {
         
     
     
-  },height =set_shiny_plot_height(session,"output_latest_plot_by_location_width"))
+  },height ="auto")
 
   #############################################################################
   # New Latest Targets: Filter data based on user input
