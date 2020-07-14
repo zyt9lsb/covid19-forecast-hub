@@ -96,7 +96,8 @@ plan = drake::drake_plan(
   
   truth = combine_truth(inc_jhu, inc_usa, inc_nyt,
                         cum_jhu, cum_usa, cum_nyt) %>%
-    dplyr::left_join(locations, by = c("location"))
+    dplyr::left_join(locations, by = c("location"))%>%
+    dplyr::mutate(location_name = coalesce(location_name.x, location_name.y))
   ##############
 )
 

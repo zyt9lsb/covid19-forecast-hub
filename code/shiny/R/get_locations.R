@@ -9,8 +9,6 @@ get_locations = function(file) {
       dplyr::mutate(state_abbreviation = unlist(lapply(state_abbreviation, function (x) {ifelse(x %in% location,abbreviation[location ==x],"NA")})))%>%
       dplyr::rename(c("abbreviation" ="state_abbreviation", "state_abbreviation" = "abbreviation")) %>%
       dplyr::select(-c("state_abbreviation"))
-      
-
 }
 
 
