@@ -9,6 +9,7 @@ source("code/processing-fxns/get_next_saturday.R")
 
 # all_data = readRDS("code/shiny/drake_files/all_data.RDS")
 fourweek_date = get_next_saturday(Sys.Date() + 3*7)
+all_forecast_dates = get_all_forecast_dates(forecast_files)
 loadd(truth)
 truth_sources = unique(truth$source)
 # loadd(latest)
@@ -33,8 +34,8 @@ ui <- navbarPage(
   tabPanel("New Latest targets",  
            sidebarLayout(
              sidebarPanel(
-               selectInput("targets_type",     "Type", sort(unique(latest_targets$type))),
-               selectInput("targets_target",     "Target", sort(unique(latest_targets$target)))
+               #selectInput("targets_type",     "Type", sort(unique(latest_targets$type))),
+               #selectInput("targets_target",     "Target", sort(unique(latest_targets$target)))
              ), 
              mainPanel(
                plotOutput("latest_targets")
@@ -307,33 +308,54 @@ server <- function(input, output, session) {
   #############################################################################
   # New Latest Targets: Filter data based on user input
   
-  latest_t_ty    <- reactive({ latest_targets %>% filter( type         == input$targets_type) })
-  latest_t_t     <- reactive({ latest_t_ty()  %>% filter(target        == input$targets_target) })
-  
-  observe({
-    targets <- sort(unique(latest_t_ty()$target))
-    updateSelectInput(session, "targets_target", choices = targets, 
-                      selected = ifelse("wk ahead cum death" %in% targets, 
-                                        "wk ahead cum death", 
-                                        targets[1]))
-  })
-  
+  # latest_t_ty    <- reactive({ latest_targets %>% filter( type         == input$targets_type) })
+  # latest_t_t     <- reactive({ latest_t_ty()  %>% filter(target        == input$targets_target) })
+  # 
+  # observe({
+  #   targets <- sort(unique(latest_t_ty()$target))
+  #   updateSelectInput(session, "targets_target", choices = targets, 
+  #                     selected = ifelse("wk ahead cum death" %in% targets, 
+  #                                       "wk ahead cum death", 
+  #                                       targets[1]))
+  # })
+  # 
   
   output$latest_targets <-shiny::renderPlot({
-    d    <- latest_t_t()
-    d <- d %>% dplyr::mutate(team_model = paste(d$team,d$model,sep="_"))
-    dates <- unique(d$forecast_date)
+    #d    <- latest_t_t()
+    #d <- d %>% dplyr::mutate(team_model = paste(d$team,d$model,sep="_"))
+    #dates <- unique(d$forecast_date)
 
     
-    ggplot(d, aes(x=forecast_date,y=reorder(team_model,forecast_date)))+
-      geom_segment(aes(x = as.Date(min(dates))-1, y = reorder(team_model,forecast_date), 
-                       xend = as.Date(forecast_date,"%Y-%m-%d"), yend = reorder(team_model,forecast_date))) +
-      geom_point()+
-      geom_vline(xintercept = Sys.Date(), colour="red")+
-      scale_x_date(breaks = sort(c(seq(as.Date(min(dates))-1, as.Date(max(dates)),length.out=7), Sys.Date())),limits = c(as.Date(min(dates))-1, Sys.Date()+1),date_labels="%m/%d")+
-      labs(x="Latest Forecast Date", y = "Model",title = paste("System date:", Sys.Date()))+
-      theme(axis.text.x = element_text(angle = 60),plot.title = element_text(color = "red"))
-  },height=800)
+  #   ggplot(d, aes(x=forecast_date,y=reorder(team_model,forecast_date)))+
+  #     geom_segment(aes(x = as.Date(min(dates))-1, y = reorder(team_model,forecast_date), 
+  #                      xend = as.Date(forecast_date,"%Y-%m-%d"), yend = reorder(team_model,forecast_date))) +
+  #     geom_point()+
+  #     geom_vline(xintercept = Sys.Date(), colour="red")+
+  #     scale_x_date(breaks = sort(c(seq(as.Date(min(dates))-1, as.Date(max(dates)),length.out=7), Sys.Date())),limits = c(as.Date(min(dates))-1, Sys.Date()+1),date_labels="%m/%d")+
+  #     labs(x="Latest Forecast Date", y = "Model",title = paste("System date:", Sys.Date()))+
+  #     theme(axis.text.x = element_text(angle = 60),plot.title = element_text(color = "red"))
+  # },height=800)
+    
+  d = reshape2::melt(all_forecast_dates) %>% 
+    dplyr::mutate(team_model = paste(team,model,sep="_"),)
+  dates = unique(d$value)
+  dates_axis =list(seq(as.Date(min(dates))-1, as.Date(max(dates)),"day"))
+  
+  d = d %>%
+    group_by_all() %>% 
+    nest %>% 
+    mutate(data = dates_axis) %>%
+    unnest (cols = c(data)) %>%
+    mutate(color = if_else(as.Date(value) == as.Date(data), 1, 0)) %>%
+    group_by(team,model,data,team_model) %>%
+    summarise(color = sum(color))
+  
+  
+  ggplot(d,aes(x=as.Date(data), y=team_model))+
+    geom_tile(aes(fill = as.factor(color)),colour = "white") +
+    scale_x_date(breaks = "1 week",date_labels="%m/%d")+
+    scale_fill_manual(values = c("white", "blue"))
+  },height = 800)
   
   
   
