@@ -85,8 +85,8 @@ ui <- navbarPage(
                selectInput("loc_county", "County", sort(unique(latest_plot_data$location_name))),
                selectInput("loc_target",     "Target", sort(unique(latest_plot_data$simple_target))),
                selectInput("loc_sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
-               selectInput("loc_team",         "Team", sort(unique(latest_plot_data$team         )), multiple = TRUE),
-               selectInput("loc_model",       "Model", sort(unique(latest_plot_data$model        )),multiple = TRUE),
+               selectInput("loc_team",         "Team", sort(unique(latest_plot_data$team         )),selected =c("UMass","LANL","YYG","UCLA"), multiple = TRUE),
+               selectInput("loc_model",       "Model", sort(unique(latest_plot_data$model        )),selected = c("MechBayes","GrowthRate","ParamSearch","SuEIR"),multiple = TRUE),
                dateRangeInput("loc_dates", "Date range", start = "2020-03-01", end = fourweek_date)
              ),
              mainPanel(
@@ -238,14 +238,17 @@ server <- function(input, output, session) {
                                         targets[1]))
   })
   
+  # fix filter
   observe({
     teams <- sort(unique(latest_loc_ltc()$team))
-    updateSelectInput(session, "loc_team", choices = teams, selected = teams[1])
+    updateSelectInput(session, "loc_team", choices = teams, selected = ifelse(c("UMass","LANL","YYG","UCLA") %in% teams, 
+                                                                              c("UMass","LANL","YYG","UCLA"),teams[1]))
   })
   
   observe({
     models <- sort(unique(latest_loc_ltct()$model))
-    updateSelectInput(session, "loc_model", choices = models, selected = models[1])
+    updateSelectInput(session, "loc_model", choices = models,selected=ifelse(c("MechBayes","GrowthRate","ParamSearch","SuEIR") %in% models,
+                                                                             c("MechBayes","GrowthRate","ParamSearch","SuEIR"), models[1]))
   })
 
   truth_loc_plot_data <- reactive({ 
