@@ -1,6 +1,10 @@
 plan = drake::drake_plan(
   locations = get_locations(file_in("data-locations/locations.csv")),
   
+  
+  all_forecast_dates = get_all_forecast_dates(forecast_files),
+  
+  
   ##############
   # All Forecasts
   raw_data = target(
@@ -101,7 +105,8 @@ plan = drake::drake_plan(
   ##############
 )
 
-shiny <- c("truth",
+shiny <- c("all_forecast_dates",
+           "truth",
            "latest_locations",
            "latest_targets",
            "latest_quantiles",

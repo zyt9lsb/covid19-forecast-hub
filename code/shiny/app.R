@@ -9,7 +9,7 @@ source("code/processing-fxns/get_next_saturday.R")
 
 # all_data = readRDS("code/shiny/drake_files/all_data.RDS")
 fourweek_date = get_next_saturday(Sys.Date() + 3*7)
-all_forecast_dates = get_all_forecast_dates(forecast_files)
+loadd(all_forecast_dates)
 loadd(truth)
 truth_sources = unique(truth$source)
 # loadd(latest)
