@@ -97,9 +97,12 @@ plan = drake::drake_plan(
   cum_usa = get_truth(file_in("data-truth/usafacts/truth_usafacts-Cumulative Deaths.csv"), "cum", "USAFacts"),
   inc_nyt = get_truth(file_in("data-truth/nytimes/truth_nytimes-Incident Deaths.csv"),     "inc", "NYTimes"),
   cum_nyt = get_truth(file_in("data-truth/nytimes/truth_nytimes-Cumulative Deaths.csv"),   "cum", "NYTimes"),
+  inc_cases_nyt = get_truth(file_in("data-truth/nytimes/truth_nytimes-Incident Cases.csv"),     "inc", "NYTimes"),
+  inc_cases_usa = get_truth(file_in("data-truth/usafacts/truth_usafacts-Incident Cases.csv"),   "inc", "USAFacts"),
   
   truth = combine_truth(inc_jhu, inc_usa, inc_nyt,
-                        cum_jhu, cum_usa, cum_nyt) %>%
+                        cum_jhu, cum_usa, cum_nyt,
+                        inc_cases_nyt,inc_cases_usa) %>%
     dplyr::left_join(locations, by = c("location"))%>%
     dplyr::mutate(location_name = coalesce(location_name.x, location_name.y))
   ##############
