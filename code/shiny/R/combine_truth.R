@@ -1,4 +1,4 @@
-combine_truth = function(inc_jhu, inc_usa, inc_nyt, cum_jhu, cum_usa, cum_nyt,inc_cases_nyt,inc_cases_usa) {
+combine_truth = function(inc_jhu, inc_usa, inc_nyt, cum_jhu, cum_usa, cum_nyt,inc_cases_nyt,inc_cases_usa,inc_cases_jhu) {
   bind_rows(
     # deaths truth
     bind_rows(
@@ -24,9 +24,9 @@ combine_truth = function(inc_jhu, inc_usa, inc_nyt, cum_jhu, cum_usa, cum_nyt,in
                     simple_target = paste(unit, "ahead", inc_cum, death_cases)),
     #cases truth
     bind_rows(
-      bind_rows(inc_cases_nyt, inc_cases_usa) %>% dplyr::mutate(unit = "day"),
+      bind_rows(inc_cases_nyt, inc_cases_usa,inc_cases_jhu) %>% dplyr::mutate(unit = "day"),
       
-      bind_rows(inc_cases_nyt, inc_cases_usa) %>%
+      bind_rows(inc_cases_nyt, inc_cases_usa,inc_cases_jhu) %>%
         dplyr::mutate(week = MMWRweek::MMWRweek(date)$MMWRweek) %>%
         dplyr::group_by(location, week, inc_cum, source) %>%
         dplyr::summarize(date = max(date),
