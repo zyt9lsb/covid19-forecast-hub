@@ -49,7 +49,7 @@ def get_byday (df_truth):
   
   # change to yyyy/mm/dd format
   df_byday['date'] = pd.to_datetime(df_byday['date'])
-  return df_truth,df_byday
+  return df_byday
 
 def configure_JHU_data(county_truth, state_nat_truth, target):
     # pre process both county truth and state_nat_truth
@@ -77,8 +77,8 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
     # Daily truth data output for reference
     ####################################
     '''
-    county_truth, county_truth_byday = get_byday(county_truth)
-    state_nat_truth, state_nat_truth_byday = get_byday(state_nat_truth)
+    county_truth_byday = get_byday(county_truth)
+    state_nat_truth_byday = get_byday(state_nat_truth)
     df_byday = state_nat_truth_byday.append(county_truth_byday)
 
     file_path = '../data-truth/truth-' + target + '.csv'
@@ -89,7 +89,7 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
     # Truth data output for visualization
     ####################################
     '''
-    # Only visualize certain states
+    # Only visualize certain states, not county truths
     states = ['US', 'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
               'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
               'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri',
@@ -97,13 +97,15 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
               'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island',
               'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
               'West Virginia', 'Wisconsin', 'Wyoming', 'District of Columbia']
-    state_nat_truth = state_nat_truth[state_nat_truth["location_name"].isin(states)]
-    df_truth = state_nat_truth.append(county_truth)
+
+    state_nat_truth = state_nat_truth.drop(['location_name'], axis=1)
+    state_nat_truth = state_nat_truth[state_nat_truth["location_long"].isin(states)]
+    df_truth = state_nat_truth
    
     # Observed data on the seventh day
     # or group by week for incident deaths
     if target == 'Incident Deaths' or 'Incident Cases':
-        df_vis = df_truth.groupby(['week', 'location_name'], as_index=False).agg({'level_0': 'last',
+        df_vis = df_truth.groupby(['week', 'location_long'], as_index=False).agg({'level_0': 'last',
                                                                                   'value': 'sum',
                                                                                   'year': 'last',
                                                                                   'day': 'last',
@@ -123,10 +125,10 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
     df_vis['epiweek'] = df_vis['year'].astype(str) + df_vis['week']
 
     # Replace US with "nat" this is NECESSARY for visualization code!
-    df_vis.loc[df_vis["location_name"] == "US", "abbreviation"] = "nat"
+    df_vis.loc[df_vis["location_long"] == "US", "abbreviation"] = "nat"
 
     # only output "location", "epiweek", "value"
-    df_truth_short = df_vis[["location_name","abbreviation", "epiweek", "value"]]
+    df_truth_short = df_vis[["abbreviation", "epiweek", "value"]]
     df_truth_short = df_truth_short.rename(columns={"abbreviation": "location"})
 
     df_truth_short["value"].replace({0: 0.1}, inplace=True)
