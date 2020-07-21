@@ -64,14 +64,16 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
     county_truth = county_truth.merge(fips_codes, left_on='location_long', right_on='location', how='left')
     state_nat_truth = state_nat_truth.merge(fips_codes, left_on='location_long', right_on='location_name', how='left')
 
+    # Only keeps counties in the US 
+    county_truth = county_truth[county_truth.location.notnull()]
 
     # Drop NAs
     county_truth = county_truth.dropna(subset=['location', 'value'])
     state_nat_truth = state_nat_truth.dropna(subset=['location', 'value'])
 
     # add leading zeros to state code
-    #df_truth['location'] = df_truth['location'].apply(lambda x: '{0:0>2}'.format(x)) 
-
+    state_nat_truth['location'] = state_nat_truth['location'].apply(lambda x: '{0:0>2}'.format(x))
+    county_truth['location'] = county_truth['location'].apply(lambda x: '{0:0>2}'.format(x)) 
     '''
     ####################################
     # Daily truth data output for reference
@@ -101,10 +103,11 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
     state_nat_truth = state_nat_truth.drop(['location_name'], axis=1)
     state_nat_truth = state_nat_truth[state_nat_truth["location_long"].isin(states)]
     df_truth = state_nat_truth
-   
+
+    
     # Observed data on the seventh day
     # or group by week for incident deaths
-    if target == 'Incident Deaths' or 'Incident Cases':
+    if target in ('Incident Deaths','Incident Cases'):
         df_vis = df_truth.groupby(['week', 'location_long'], as_index=False).agg({'level_0': 'last',
                                                                                   'value': 'sum',
                                                                                   'year': 'last',
@@ -116,7 +119,9 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
     else:
         df_vis = df_truth[df_truth['day'] == 7]
 
-    df_vis['week'] = df_vis['week'] + 1  # shift epiweek on axis
+
+    # shift epiweek on axis
+    df_vis['week'] = df_vis['week'] + 1  
 
     # add leading zeros to epi week
     df_vis['week'] = df_vis['week'].apply(lambda x: '{0:0>2}'.format(x))
@@ -157,15 +162,15 @@ def get_truth(url):
   df_state_nat = state_agg.append(us_nat)
 
   # drop unnecessary columns
-  cols = list(range(0, 6))
-  df_state_nat_truth = df_state_nat.drop(df_state_nat.columns[cols], axis=1)
-  df_county_truth = county_agg.drop(county_agg.columns[cols], axis=1)
+  df_state_nat_truth = df_state_nat.drop(df_state_nat.columns[list(range(0, 6))], axis=1)
+  df_county_truth = county_agg.drop(county_agg.columns[list(range(0, 5))], axis=1)
 
   df_state_nat_truth_cumulative = df_state_nat_truth
   df_county_truth_cumulative = df_county_truth
 
   df_state_nat_truth_incident = df_state_nat_truth_cumulative - df_state_nat_truth_cumulative.shift(periods=1, axis='columns')
   df_county_truth_incident = df_county_truth_cumulative-df_county_truth_cumulative.shift(periods=1, axis='columns')
+
 
   return df_state_nat_truth_cumulative,df_state_nat_truth_incident,df_county_truth_cumulative,df_county_truth_incident
 
@@ -174,6 +179,7 @@ fips_codes = read_fips_codes('../data-locations/locations.csv')
 state_nat_cum_death, state_nat_inc_death,county_cum_death,county_inc_death = get_truth(url="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv")
 
 state_nat_cum_case, state_nat_inc_case,county_cum_case,county_inc_case = get_truth(url="https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv")
+
 configure_JHU_data(county_truth = county_cum_death, state_nat_truth = state_nat_cum_death, target = "Cumulative Deaths")
 configure_JHU_data(county_truth= county_inc_death, state_nat_truth = state_nat_inc_death, target = "Incident Deaths")
 
