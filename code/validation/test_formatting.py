@@ -9,6 +9,9 @@ from datetime import datetime
 import yaml
 from itertools import chain
 import collections
+from github import Github
+
+
 from validation_functions.metadata import check_for_metadata, get_metadata_model, output_duplicate_models
 from validation_functions.forecast_filename import validate_forecast_file_name
 from validation_functions.forecast_date import filename_match_forecast_date
@@ -196,11 +199,11 @@ def remove_all_entries_from_validated_files(files_changed):
 def main():
     my_path = "./data-processed"
     forecasts_changed = []
+
+    g = Github()
+    repo = g.get_repo('reichlab/covid19-forecast-hub')    
+    
     if os.environ.get('GITHUB_ACTIONS')=='true':
-        from github import Github
-        g = Github()
-        repo = g.get_repo('reichlab/covid19-forecast-hub')
-        
         print(f"Github event name: {os.environ.get('GITHUB_EVENT_NAME')}")
         if os.environ.get('GITHUB_EVENT_NAME') == 'pull_request':
             # GIHUB_REF for PR is in the format: refs/pull/:prNumber/merge, extracting that here:
@@ -211,6 +214,12 @@ def main():
             commit = repo.get_commit(sha = os.environ.get('GITHUB_SHA'))
             files_changed = commit.files
         if files_changed is not None:
+            forecasts_changed.extend([f"./{file.filename}" for file in files_changed if file.filename.startswith('data-processed') and file.filename.endswith('.csv')])
+    elif os.environ.get('TRAVIS')=='true':
+        if os.environ.get('TRAVIS_EVENT_TYPE')=='pull_request':
+            pr_num = int(os.environ.get('TRAVIS_PULL_REQUEST'))
+            pr = repo.get_pull(pr_num)
+            files_changed = [f for f in pr.get_files()]
             forecasts_changed.extend([f"./{file.filename}" for file in files_changed if file.filename.startswith('data-processed') and file.filename.endswith('.csv')])
     remove_all_entries_from_validated_files(forecasts_changed)
     print(f"files changed: {forecasts_changed}")
