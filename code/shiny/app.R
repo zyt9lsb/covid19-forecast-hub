@@ -2,6 +2,7 @@ library("drake")
 library("tidyverse")
 library("shiny")
 library("DT")
+library("shinyWidgets")
 
 options(DT.options = list(pageLength = 50))
 
@@ -9,7 +10,6 @@ source("code/processing-fxns/get_next_saturday.R")
 
 # all_data = readRDS("code/shiny/drake_files/all_data.RDS")
 fourweek_date = get_next_saturday(Sys.Date() + 3*7)
-loadd(all_forecast_dates)
 loadd(truth)
 truth_sources = unique(truth$source)
 # loadd(latest)
@@ -28,14 +28,19 @@ ui <- navbarPage(
   tabPanel("Latest locations", 
            DT::DTOutput("latest_locations")),
   
+  #tabPanel("Latest targets",  
+  #          h5("max_n: the farthest ahead forecast for this target (does not guarantee that all earlier targets exist)"),
+  #          DT::DTOutput("old_latest_targets")),
   tabPanel("Latest targets",  
-            h5("max_n: the farthest ahead forecast for this target (does not guarantee that all earlier targets exist)"),
-            DT::DTOutput("old_latest_targets")),
-  tabPanel("New Latest targets",  
            sidebarLayout(
              sidebarPanel(
-               #selectInput("targets_type",     "Type", sort(unique(latest_targets$type))),
-               #selectInput("targets_target",     "Target", sort(unique(latest_targets$target)))
+               shinyWidgets::pickerInput("targets_team",         "Team", sort(unique(latest_targets$team         )),selected =sort(unique(latest_targets$team         )),
+                                         options = list(`actions-box` = TRUE), multiple = TRUE),
+               shinyWidgets::pickerInput("targets_model",       "Model", sort(unique(latest_targets$model        )),selected = sort(unique(latest_targets$team         )),
+                                         options = list(`actions-box` = TRUE),multiple = TRUE),
+               selectInput("targets_type",     "Type", sort(unique(latest_targets$type))),
+               selectInput("targets_target",     "Target", sort(unique(latest_targets$target))),
+               dateRangeInput("targets_dates", "Date range", start = "2020-03-15", end = Sys.Date())
              ), 
              mainPanel(
                plotOutput("latest_targets")
@@ -70,7 +75,7 @@ ui <- navbarPage(
                selectInput("abbreviation", "Location", sort(unique(latest_plot_data$abbreviation   ))),
                selectInput("county", "County", sort(unique(latest_plot_data$location_name  ))),
                selectInput("sources", "Truth sources", truth_sources, selected = "JHU-CSSE", multiple = TRUE),
-               dateRangeInput("dates", "Date range", start = "2020-03-01", end = fourweek_date)
+               dateRangeInput("dates", "Date range", start = "2020-03-01", end =  fourweek_date)
              ), 
              mainPanel(
                plotOutput("latest_plot")
@@ -111,9 +116,6 @@ ui <- navbarPage(
   selected = "Latest Viz"
 )
 
-#filter_names <- c("input$team", "input$model","input$target", "input$abbreviation")
-#filters <- c("team %in% input$team","model %in% input$model","target %in% input$target", "abbreviation %in% input$abbreviation")
-#checknull <- NULL
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
@@ -247,8 +249,7 @@ server <- function(input, output, session) {
   
   observe({
     models <- sort(unique(latest_loc_ltct()$model))
-    updateSelectInput(session, "loc_model", choices = models,selected=ifelse(c("MechBayes","GrowthRate","ParamSearch","SuEIR") %in% models,
-                                                                             c("MechBayes","GrowthRate","ParamSearch","SuEIR"), models[1]))
+    updateSelectInput(session, "loc_model", choices = models,selected=models)
   })
 
   truth_loc_plot_data <- reactive({ 
@@ -310,55 +311,62 @@ server <- function(input, output, session) {
 
   #############################################################################
   # New Latest Targets: Filter data based on user input
+   latest_t_t <- reactive({latest_targets %>% filter( team         %in% input$targets_team) })
+   latest_t_tm <- reactive({latest_t_t() %>% filter( model        %in%  input$targets_model) })
+   latest_t_tmty    <- reactive({ latest_t_tm() %>% filter( type    %in%  input$targets_type) })
+   latest_t_tmtyt    <- reactive({ latest_t_tmty()  %>% filter(target     %in% input$targets_target) })
+   
+   
+   observe({
+     models <- sort(unique(latest_t_t()$model))
+     updateSelectInput(session, "targets_model", choices = models, selected = models)
+   })
+   
+   observe({
+     types <- sort(unique(latest_t_tm()$type))
+     updateSelectInput(session, "targets_type", choices = types, selected = types[1])
+   })
   
-  # latest_t_ty    <- reactive({ latest_targets %>% filter( type         == input$targets_type) })
-  # latest_t_t     <- reactive({ latest_t_ty()  %>% filter(target        == input$targets_target) })
-  # 
-  # observe({
-  #   targets <- sort(unique(latest_t_ty()$target))
-  #   updateSelectInput(session, "targets_target", choices = targets, 
-  #                     selected = ifelse("wk ahead cum death" %in% targets, 
-  #                                       "wk ahead cum death", 
-  #                                       targets[1]))
-  # })
-  # 
-  
+   
+   observe({
+     targets <- sort(unique(latest_t_tmty()$target))
+     updateSelectInput(session, "targets_target", choices = targets, 
+                       selected = ifelse("wk ahead cum death" %in% targets, 
+                                         "wk ahead cum death", 
+                                         targets[1]))
+   })
+   
+   set_shiny_plot_height <- function(session, output_width_name){
+     function() { 
+       session$clientData[[output_width_name]] 
+     }
+   }
   output$latest_targets <-shiny::renderPlot({
-    #d    <- latest_t_t()
-    #d <- d %>% dplyr::mutate(team_model = paste(d$team,d$model,sep="_"))
-    #dates <- unique(d$forecast_date)
-
+  
+    d = reshape2::melt(latest_t_tmtyt(),id.vars=c("team","model","type","target","max_n")) %>% 
+      dplyr::mutate(team_model = paste(team,model,sep="_"),)
+    dates = unique(d$value)
+    dates_axis =list(seq(as.Date(min(dates))-1, Sys.Date(),"day"))
     
-  #   ggplot(d, aes(x=forecast_date,y=reorder(team_model,forecast_date)))+
-  #     geom_segment(aes(x = as.Date(min(dates))-1, y = reorder(team_model,forecast_date), 
-  #                      xend = as.Date(forecast_date,"%Y-%m-%d"), yend = reorder(team_model,forecast_date))) +
-  #     geom_point()+
-  #     geom_vline(xintercept = Sys.Date(), colour="red")+
-  #     scale_x_date(breaks = sort(c(seq(as.Date(min(dates))-1, as.Date(max(dates)),length.out=7), Sys.Date())),limits = c(as.Date(min(dates))-1, Sys.Date()+1),date_labels="%m/%d")+
-  #     labs(x="Latest Forecast Date", y = "Model",title = paste("System date:", Sys.Date()))+
-  #     theme(axis.text.x = element_text(angle = 60),plot.title = element_text(color = "red"))
-  # },height=800)
+    d = d %>%
+      group_by_all() %>% 
+      nest %>% 
+      mutate(data = dates_axis) %>%
+      unnest (cols = c(data)) %>%
+      mutate(color = if_else(as.Date(value) == as.Date(data), 1, 0)) %>%
+      group_by(team,model,type,target,data,team_model) %>%
+      summarise(color = sum(color))
     
-  d = reshape2::melt(all_forecast_dates) %>% 
-    dplyr::mutate(team_model = paste(team,model,sep="_"),)
-  dates = unique(d$value)
-  dates_axis =list(seq(as.Date(min(dates))-1, as.Date(max(dates)),"day"))
-  
-  d = d %>%
-    group_by_all() %>% 
-    nest %>% 
-    mutate(data = dates_axis) %>%
-    unnest (cols = c(data)) %>%
-    mutate(color = if_else(as.Date(value) == as.Date(data), 1, 0)) %>%
-    group_by(team,model,data,team_model) %>%
-    summarise(color = sum(color))
-  
-  
-  ggplot(d,aes(x=as.Date(data), y=team_model))+
-    geom_tile(aes(fill = as.factor(color)),colour = "white") +
-    scale_x_date(breaks = "1 week",date_labels="%m/%d")+
-    scale_fill_manual(values = c("white", "blue"))
-  },height = 800)
+    
+    ggplot(d,aes(x=as.Date(data), y=team_model,fill = as.factor(color)))+
+      geom_tile(colour="black",size=0.25) +
+      scale_y_discrete(expand=c(0,0))+
+      scale_x_date(expand=c(0,0),breaks = "1 day",date_labels="%m/%d",limits =c(input$targets_dates[1], input$targets_dates[2]))+
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5))+
+      scale_fill_manual(values = c("white", "chartreuse2"),name = "Status", labels = c("not submitted", "sumbitted"))+
+      labs(x = "Forecast Dates", y="Team Model")+
+      theme(legend.position="bottom")
+  },height = set_shiny_plot_height(session, "output_latest_targets_width"))
   
   
   
