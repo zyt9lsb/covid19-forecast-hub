@@ -14,14 +14,15 @@ def read_fips_codes(filepath):
 
   # match state abbrevaition with state fips code
   fips_codes['state_abbr'] = fips_codes['state_abbr'].apply(lambda x: fips_codes[fips_codes.location ==x].abbreviation.tolist()[0] if str(x) in fips_codes['location'].tolist() else 'NA')
-  
+
   # only output "location (fips code)","location_name","(state) abbreviation"
   fips_codes = fips_codes.drop('abbreviation',axis=1)
   fips_codes.rename({'state_abbr': 'abbreviation'}, axis=1, inplace=True)
   return fips_codes
 
 def get_epi_data(date):
-    format_str = '%m/%d/%y'  # The format
+    # The format
+    format_str = '%m/%d/%y'
     dt = datetime.datetime.strptime(date, format_str).date()
     epi = pm.date_to_epiweek(dt)
     return epi.year, epi.week, epi.day
@@ -30,7 +31,7 @@ def pre_process (df):
   # convert matrix to repeating row format
   df_truth = df.unstack()
   df_truth = df_truth.reset_index()
-  
+
   # get epi data from date
   df_truth['year'], df_truth['week'], df_truth['day'] = \
   zip(*df_truth['level_0'].map(get_epi_data))
@@ -40,13 +41,13 @@ def get_byday (df_truth):
   # only output "location", "epiweek", "value"
   df_truth = df_truth.drop(['location_long'], axis=1)
   df_byday = df_truth.rename(columns={"level_0": "date"})
-  
+
   # select columns
   df_byday = df_byday[["date", "location", "location_name", "value"]]
-  
+
   # ensure value column is integer
   df_byday['value'] = df_byday['value'].astype(int)
-  
+
   # change to yyyy/mm/dd format
   df_byday['date'] = pd.to_datetime(df_byday['date'])
   return df_byday
@@ -64,7 +65,7 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
     county_truth = county_truth.merge(fips_codes, left_on='location_long', right_on='location', how='left')
     state_nat_truth = state_nat_truth.merge(fips_codes, left_on='location_long', right_on='location_name', how='left')
 
-    # Only keeps counties in the US 
+    # Only keeps counties in the US
     county_truth = county_truth[county_truth.location.notnull()]
 
     # Drop NAs
@@ -73,7 +74,7 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
 
     # add leading zeros to state code
     state_nat_truth['location'] = state_nat_truth['location'].apply(lambda x: '{0:0>2}'.format(x))
-    county_truth['location'] = county_truth['location'].apply(lambda x: '{0:0>2}'.format(x)) 
+    county_truth['location'] = county_truth['location'].apply(lambda x: '{0:0>2}'.format(x))
     '''
     ####################################
     # Daily truth data output for reference
@@ -104,7 +105,7 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
     state_nat_truth = state_nat_truth[state_nat_truth["location_long"].isin(states)]
     df_truth = state_nat_truth
 
-    
+
     # Observed data on the seventh day
     # or group by week for incident deaths
     if target in ('Incident Deaths','Incident Cases'):
@@ -114,14 +115,14 @@ def configure_JHU_data(county_truth, state_nat_truth, target):
                                                                                   'day': 'last',
                                                                                   'location': 'last',
                                                                                   'abbreviation': 'last'})
-                                                                                  
+
         df_vis = df_vis[df_vis['day'] == 7]
     else:
         df_vis = df_truth[df_truth['day'] == 7]
 
 
     # shift epiweek on axis
-    df_vis['week'] = df_vis['week'] + 1  
+    df_vis['week'] = df_vis['week'] + 1
 
     # add leading zeros to epi week
     df_vis['week'] = df_vis['week'].apply(lambda x: '{0:0>2}'.format(x))
@@ -185,5 +186,3 @@ configure_JHU_data(county_truth= county_inc_death, state_nat_truth = state_nat_i
 
 configure_JHU_data(county_truth = county_cum_case, state_nat_truth = state_nat_cum_case, target = "Cumulative Cases")
 configure_JHU_data(county_truth= county_inc_case, state_nat_truth = state_nat_inc_case, target = "Incident Cases")
-
-
